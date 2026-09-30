@@ -1,19 +1,35 @@
 # BlazingSystems — Engineering Labs
 
-Active development projects that have coherent source code but still require platform, hardware, integration, or release validation.
+Development-stage projects with coherent implementations that still require hardware, platform, integration, or release validation.
 
-## Current Labs
+## Development Portfolio
 
-| Project | Area | Development Stage |
-|---|---|---|
-| Blaze Pisonet Universal | ESP8266 / embedded networking | Hardware-validation stage |
-| BlazeFM | Android utility | Build and device-test stage |
-| MachDownload | Python / desktop networking | Working alpha |
-| Local AI Studio | Local AI / Python | Engine prototype |
-| OpenWrt VLAN Deployment Study | Networking | Configuration study |
+| Project | Area | Stage | Public interface |
+|---|---|---|---|
+| Blaze Pisonet Universal | ESP8266 / embedded networking | Hardware validation | `embedded/blaze-pisonet-universal/preview.html` |
+| BlazeFM | Android utility | Build and device validation | Source project |
+| MachDownload | Python / desktop networking | Working alpha | CLI / GUI source |
+| Local AI Studio | Local Python engine | Engine prototype | `ai/local-ai-studio/preview.html` |
+| OpenWrt VLAN Deployment Study | Networking | Configuration study | Documentation |
 
-## Lab Standard
+The repository landing page is `index.html`.
 
-A project remains here until its unresolved validation work is documented and completed. Public source excludes private credentials, client records, raw router backups, private keys, and deployment-specific secrets.
+## Lab Methodology
 
-Projects that become demonstrably stable can later move to the main Projects portfolio. Exploratory concepts that are not yet coherent implementations remain in Experiments.
+A Lab project should progress through:
+
+1. source-structure review;
+2. static/syntax validation;
+3. controlled functional tests;
+4. target hardware/platform testing;
+5. failure and recovery testing;
+6. documented limitations;
+7. release-readiness review.
+
+A project moves to the main portfolio only when its remaining validation requirements are sufficiently resolved.
+
+## Publication Standard
+
+Public Lab material excludes production credentials, private keys, raw router backups, employer/client records, private deployment data, and model weights that cannot be redistributed.
+
+Examples use generic values or placeholders. Hardware and networking projects must be adapted and independently validated for the target environment.
