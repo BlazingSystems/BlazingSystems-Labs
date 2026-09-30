@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Large/local model assets
+models/*
+!models/.gitkeep
+engines/piper/*.onnx
+engines/piper/*.json
+engines/realesrgan/*.pth
+
+# Runtime output
+output/*
+!output/.gitkeep
+input/*
+!input/.gitkeep
+logs/*
+!logs/.gitkeep
+
+.DS_Store
+Thumbs.db

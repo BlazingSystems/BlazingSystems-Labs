@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Blaze Pisonet Universal Preview</title>
+<style>
+body{margin:0;background:#09111a;color:#eef5ff;font:14px/1.5 system-ui,sans-serif;min-height:100vh;display:grid;place-items:center;padding:20px}
+.app{width:min(760px,100%);background:#121d29;border:1px solid #2a3d52;border-radius:18px;padding:20px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.card{background:#0b151f;border:1px solid #263a50;border-radius:12px;padding:14px}
+.big{font-size:28px;font-weight:800}.muted{color:#93a8bc}button{padding:9px 12px;background:#173d5f;color:#fff;border:1px solid #31536d;border-radius:8px;cursor:pointer}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style></head><body><main class="app">
+<h1>Blaze Pisonet Universal</h1><p class="muted">Browser-only preview of the embedded management interface.</p>
+<div class="grid"><div class="card"><span class="muted">Role</span><div class="big">MASTER</div></div><div class="card"><span class="muted">Active node</span><div class="big" id="node">2</div></div><div class="card"><span class="muted">Session coins</span><div class="big" id="coins">0</div></div></div>
+<p><button id="ready">Simulate READY</button> <button id="coin">Simulate Coin</button> <button id="end">End Session</button></p>
+<div class="card"><b>Status</b><p id="status" class="muted">Idle. This preview does not control hardware.</p></div>
+<script>
+let c=0;ready.onclick=()=>status.textContent='Node 2 requested a coin session.';coin.onclick=()=>{c++;coins.textContent=c;status.textContent='Demo coin credited to Node 2.'};end.onclick=()=>{c=0;coins.textContent=0;status.textContent='Demo session ended.'};
+</script></main></body></html>

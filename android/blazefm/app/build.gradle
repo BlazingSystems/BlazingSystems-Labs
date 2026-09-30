@@ -1,0 +1,20 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.blazefm.blazesystems'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.blazefm.blazesystems'
+        minSdk 21
+        targetSdk 35
+        versionCode 2
+        versionName '1.0.1'
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
