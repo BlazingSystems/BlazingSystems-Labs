@@ -1,60 +1,55 @@
-# Blaze Pisonet Timer — Public-Safe Continuation
+# Blaze Pisonet Timer — Public-Safe Recovery
 
-**Type:** ESP8266 timer / relay controller  
-**Status:** SOURCE READY / HARDWARE VALIDATION REQUIRED
-
-This is a publication-safe continuation of an earlier private Pisonet timer build. The private edition used embedded MP3 assets and a reusable default Wi-Fi password; those elements are intentionally not published.
+**Project Status:** LAB / RECOVERED DERIVATIVE
 
 ## Purpose
 
-The project demonstrates a compact ESP8266-based timer for coin-operated computer or appliance control. It runs as a local Wi-Fi access point with a browser configuration page and does not require internet access.
-
-## Features
-
-- configurable time added per coin pulse;
-- two relay outputs;
-- TM1637 four-digit countdown display;
-- passive-buzzer coin, warning, and timeout tones;
-- local AP + web settings interface;
-- persistent remaining time and lifetime coin counter;
-- generated per-device AP name and password on first boot;
-- no cloud service or production endpoint.
-
-## Default Pin Map
-
-| Function | ESP8266 GPIO | NodeMCU label |
-|---|---:|---|
-| Coin input | 0 | D3 |
-| Relay 1 | 5 | D1 |
-| Relay 2 | 4 | D2 |
-| Passive buzzer | 3 | RX |
-| TM1637 CLK | 12 | D6 |
-| TM1637 DIO | 13 | D7 |
-
-## Build
-
-Required Arduino libraries:
-
-- ESP8266 core (ESP8266WiFi, ESP8266WebServer, EEPROM);
-- TM1637Display.
-
-Open `Blaze_Pisonet_Timer_PUBLIC.ino`, select the correct ESP8266 board, and compile/upload normally.
+ESP8266 timer/controller firmware recovered from an earlier BlazingSystems build. The project combines coin-pulse timing, dual relay control, a TM1637 display, EEPROM persistence, local web configuration, sales counters, warning behavior, and optional audio playback.
 
 ## Public-Safe Changes
 
-This repository does **not** contain the private embedded-audio header or any MP3 payload. It also does not publish the historical universal AP password. The firmware generates credentials per device on first boot and lets the owner change them locally.
+This directory is a publication-safe derivative of the recovered source, not a byte-for-byte archival copy.
+
+- the original fixed default AP password was replaced with the placeholder `CHANGE_ME`;
+- the original embedded MP3 payload is not redistributed;
+- `embedded_audio_public.h` provides empty audio placeholders so the source structure remains buildable without bundled recordings;
+- no private deployment values, customer data, employer data, or production credentials are included.
+
+The unmodified recovered source and its original audio header remain outside public GitHub.
+
+## Hardware / Dependencies
+
+- ESP8266
+- TM1637 display
+- coin pulse input
+- two relay outputs
+- passive audio output on ESP8266 I2S NoDAC GPIO3/RX
+- Arduino libraries: ESP8266 core, TM1637Display, ESP8266Audio
+
+## Build / Usage
+
+1. Open `Blaze_Pisonet_Timer_Public.ino` in the Arduino IDE.
+2. Install the documented libraries.
+3. Review GPIO assignments for your board.
+4. Change the default AP password before deployment.
+5. If audio is required, replace the empty arrays in `embedded_audio_public.h` only with recordings you created or are licensed to distribute.
+6. Compile and test on the exact target hardware before connecting paid loads.
 
 ## Validation
 
-The source has been structurally reviewed for the public portfolio, but this specific continuation has not been compiled against every ESP8266 core/library combination or tested on the final relay/coin/display hardware.
+The recovered implementation is structurally complete, but this public derivative has not been revalidated on target hardware after sanitization.
 
 ## Known Limitations
 
-- powered-off elapsed time cannot be subtracted without an RTC;
-- EEPROM persistence is event-based rather than transactional;
-- GPIO3/RX is used as the default buzzer output, so serial/debug wiring may need adjustment;
-- relay polarity and electrical isolation must be verified for the actual hardware.
+- bundled spoken/MP3 audio is intentionally disabled;
+- sales day/month buckets in the recovered design are uptime-derived rather than calendar/RTC based;
+- relay polarity and GPIO mapping must match the target cabinet;
+- hardware-level electrical protection is outside the firmware.
 
-## Project Status
+## Future Work
 
-**SOURCE READY / LAB**
+- generated first-boot credentials;
+- RTC/NTP-backed sales periods;
+- hardware validation and brownout/recovery tests;
+- replace embedded audio with user-owned recordings or synthesized tones.
+
