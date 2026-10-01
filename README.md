@@ -7,7 +7,6 @@ Development-stage projects with coherent implementations that still require hard
 | Project | Area | Stage | Project | Preview / interface |
 |---|---|---|---|---|
 | Blaze Pisonet Universal | ESP8266 / embedded networking | Hardware validation | [Open project](embedded/blaze-pisonet-universal/) | [Preview](embedded/blaze-pisonet-universal/preview.html) |
-| Blaze Pisonet Timer — Public-Safe | ESP8266 / timer control | Source-ready lab | [Open project](embedded/blaze-pisonet-timer-public/) | [Preview](embedded/blaze-pisonet-timer-public/preview.html) |
 | BlazeFM | Android utility | Build and device validation | [Open project](android/blazefm/) | Source project |
 | MachDownload | Python / desktop networking | Working alpha | [Open project](software/machdownload/) | CLI / GUI source |
 | Local AI Studio | Local Python engine | Engine prototype | [Open project](ai/local-ai-studio/) | [Preview](ai/local-ai-studio/preview.html) |
