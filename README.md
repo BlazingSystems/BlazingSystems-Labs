@@ -1,38 +1,43 @@
+<div align="center">
+
 # BlazingSystems — Engineering Labs
 
-Development-stage projects with coherent implementations that still require hardware, platform, integration, or release validation.
+**Active implementations that are coherent enough to study and use, but still require platform, hardware, integration, or release validation**
 
-## Development Portfolio
+[Profile](https://github.com/BlazingSystems) ·
+[Projects](https://github.com/BlazingSystems/BlazingSystems-Projects) ·
+[Experiments](https://github.com/BlazingSystems/BlazingSystems-Experiments) ·
+[Archives](https://github.com/BlazingSystems/BlazingSystems-Archives)
 
-| Project | Area | Stage | Project | Preview / interface |
-|---|---|---|---|---|
-| Blaze Pisonet Universal | ESP8266 / embedded networking | Hardware validation | [Open project](embedded/blaze-pisonet-universal/) | [Preview](embedded/blaze-pisonet-universal/preview.html) |
-| Blaze Pisonet Timer — Public-Safe Recovery | ESP8266 / timer control | Recovered lab derivative | [Open project](embedded/blaze-pisonet-timer-public/) | [Preview](embedded/blaze-pisonet-timer-public/preview.html) |
-| BlazeFM | Android utility | Build and device validation | [Open project](android/blazefm/) | Source project |
-| MachDownload | Python / desktop networking | Working alpha | [Open project](software/machdownload/) | CLI / GUI source |
-| Local AI Studio | Local Python engine | Engine prototype | [Open project](ai/local-ai-studio/) | [Preview](ai/local-ai-studio/preview.html) |
-| OpenWrt VLAN Deployment Study | Networking | Configuration study | [Open project](networking/openwrt-vlan-deployment/) | Documentation |
-| ESPHole | ESP8266 / DNS + NAPT | Source-ready lab | [Open project](networking/esphole/) | [Preview](networking/esphole/preview.html) |
-| BlazeTube ESP8266 | ESP8266 / shared browser session + NAPT | Source-ready lab | [Open project](networking/blazetube-esp8266/) | [Preview](networking/blazetube-esp8266/preview.html) |
+</div>
 
-The repository landing page is [index.html](index.html).
+---
 
-## Lab Methodology
+## Lab Portfolio
 
-A Lab project should progress through:
+| Area | Project | Current stage |
+|---|---|---|
+| [Embedded](embedded/) | Blaze Pisonet Universal | Hardware validation |
+| [Embedded](embedded/) | Blaze Pisonet Timer — Public-Safe Recovery | Recovered lab derivative |
+| [Android](android/) | BlazeFM | Build and device validation |
+| [Software](software/) | MachDownload | Working alpha |
+| [AI / Local tools](ai/) | Local AI Studio | Engine prototype |
+| [Networking](networking/) | OpenWrt VLAN Deployment Study | Configuration study |
+| [Networking](networking/) | ESPHole | Source-ready lab |
+| [Networking](networking/) | BlazeTube ESP8266 | Source-ready lab |
 
-1. source-structure review;
-2. static/syntax validation;
-3. controlled functional tests;
-4. target hardware/platform testing;
-5. failure and recovery testing;
-6. documented limitations;
-7. release-readiness review.
+The browser-friendly repository landing page is [index.html](index.html).
 
-A project moves to the main portfolio only when its remaining validation requirements are sufficiently resolved.
+## Promotion Path
+
+```text
+Source review → Static tests → Functional tests → Target hardware/platform → Failure recovery → Release review
+```
+
+A Lab moves to Projects only when its remaining validation boundary is small, understood, and documented.
 
 ## Publication Standard
 
-Public Lab material excludes production credentials, private keys, raw router backups, employer/client records, private deployment data, and model weights that cannot be redistributed.
+Public Lab material uses generic values or generated setup credentials and excludes employer/client records, raw production backups, private keys, redistributed commercial payloads and private deployment data.
 
-Examples use generic values, placeholders, or generated first-boot credentials. Hardware and networking projects must be adapted and independently validated for the target environment.
+See [NOTICE.md](NOTICE.md) for repository-wide publication notes.
