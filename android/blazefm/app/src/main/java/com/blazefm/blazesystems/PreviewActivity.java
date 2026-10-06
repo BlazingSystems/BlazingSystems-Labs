@@ -92,7 +92,7 @@ public class PreviewActivity extends Activity {
         text.setTextIsSelectable(true);
         text.setGravity(Gravity.TOP|Gravity.START);
         int inner=Ui.dp(this,16);text.setPadding(inner,inner,inner,inner);
-        text.setBackgroundResource(R.drawable.bg_icon_container);
+        text.setBackgroundResource(R.drawable.bg_surface_panel);
         scroll.addView(text,new ScrollView.LayoutParams(-1,-2));
         content.addView(scroll,new FrameLayout.LayoutParams(-1,-1));
 
@@ -124,8 +124,8 @@ public class PreviewActivity extends Activity {
 
         MaterialCardView card=new MaterialCardView(this);
         card.setRadius(Ui.dp(this,24));
-        card.setStrokeWidth(Ui.dp(this,1));
-        card.setStrokeColor(getResources().getColor(R.color.blaze_outline));
+        card.setStrokeWidth(0);
+        card.setCardBackgroundColor(getResources().getColor(R.color.blaze_surface_variant));
         card.setCardElevation(0);
 
         LinearLayout body=new LinearLayout(this);

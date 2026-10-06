@@ -20,10 +20,10 @@
         android:layout_marginStart="12dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="12dp"
+        app:cardBackgroundColor="@color/blaze_surface_variant"
         app:cardCornerRadius="20dp"
         app:cardElevation="0dp"
-        app:strokeColor="@color/blaze_outline"
-        app:strokeWidth="1dp">
+        app:strokeWidth="0dp">
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
