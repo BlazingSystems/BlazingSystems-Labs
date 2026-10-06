@@ -71,15 +71,19 @@ final class FileRecyclerAdapter extends RecyclerView.Adapter<FileRecyclerAdapter
         h.thumb.setImageDrawable(null);
         h.icon.setImageResource(iconFor(f));
 
-        int stroke=ContextCompat.getColor(activity,isSelected?R.color.blaze_primary:R.color.blaze_outline);
-        h.card.setStrokeColor(stroke);
-        h.card.setStrokeWidth(dp(isSelected?2:1));
+        int background=ContextCompat.getColor(activity,
+                isSelected?R.color.blaze_primary_container:(grid?R.color.blaze_surface_variant:R.color.blaze_surface));
+        h.card.setCardBackgroundColor(background);
+        h.card.setStrokeWidth(0);
 
         if(FileEngine.isImage(f)&&!isSelected)bindThumb(h.thumb,h.icon,f,grid?220:160);
 
         h.card.setOnClickListener(v->listener.onClick(f));
         h.card.setOnLongClickListener(v->{listener.onLongClick(f);return true;});
-        if(h.more!=null)h.more.setOnClickListener(v->listener.onMore(f));
+        if(h.more!=null){
+            h.more.setVisibility(selected.isEmpty()?View.VISIBLE:View.INVISIBLE);
+            h.more.setOnClickListener(v->listener.onMore(f));
+        }
     }
 
     private void bindThumb(ImageView image,ImageView icon,File f,int target){
