@@ -130,7 +130,30 @@ public class MainActivity extends Activity {
 
     private void ensurePermission(){if(Build.VERSION.SDK_INT>=30&&!Environment.isExternalStorageManager()){new MaterialAlertDialogBuilder(this).setTitle("File access required").setMessage("BlazeFM is a full file manager. Android 11+ requires All files access for normal filesystem browsing, duplicates, archives and Trash. You can still use Cloud/SAF without it.").setPositiveButton("Open settings",(d,w)->{try{startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,Uri.parse("package:"+getPackageName())));}catch(Exception e){startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));}}).setNegativeButton("Later",null).show();}else if(Build.VERSION.SDK_INT>=23&&Build.VERSION.SDK_INT<30&&checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},REQ);}
 
-    private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());folderTitle.setText(d.equals(Environment.getExternalStorageDirectory())?"Internal storage":d.getName());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList<File>x=new ArrayList<>();for(File f:a)if((hidden||!f.getName().startsWith("."))&&!f.getName().equals(".BlazeFM_Trash"))x.add(f);sortFiles(x);shown.addAll(x);}updateHomePanel();render();status.setText(shown.size()+" items · "+sortLabel()+((clipboard.size()>0)?" · clipboard "+clipboard.size():""));}
+    private void showDir(File d){
+        if(d==null||!d.isDirectory())return;
+        showingResults=false;
+        cwd=d;
+        File home=Environment.getExternalStorageDirectory();
+        boolean atHome=d.equals(home);
+        path.setVisibility(atHome?View.GONE:View.VISIBLE);
+        if(!atHome)path.setText(friendlyPath(d));
+        folderTitle.setText(atHome?"Internal storage":d.getName());
+        selected.clear();
+        File[] a=null;
+        try{a=d.listFiles();}catch(Exception ignored){}
+        shown.clear();
+        boolean hidden=AppPrefs.showHidden(this);
+        if(a!=null){
+            ArrayList<File>x=new ArrayList<>();
+            for(File f:a)if((hidden||!f.getName().startsWith("."))&&!f.getName().equals(".BlazeFM_Trash"))x.add(f);
+            sortFiles(x);
+            shown.addAll(x);
+        }
+        updateHomePanel();
+        render();
+        status.setText(itemCount(shown.size())+" · "+sortLabel()+((clipboard.size()>0)?" · clipboard "+clipboard.size():""));
+    }
     private void render(){
         boolean gridMode=AppPrefs.gridView(this);
         if(showingResults)homePanel.setVisibility(View.GONE);else updateHomePanel();
@@ -257,7 +280,18 @@ public class MainActivity extends Activity {
 
     private void searchDialog(){inputSheet("Search in "+(cwd==null?"Files":cwd.getName()),"Filename contains…","","Search",this::runSearch);}
     private void runSearch(String q){if(q.trim().isEmpty())return;cancel=false;progress("Searching…");File base=cwd;new Thread(()->{List<File>a=FileEngine.walk(base,AppPrefs.showHidden(this),new P());ArrayList<File>r=new ArrayList<>();String needle=q.toLowerCase(Locale.US);for(File f:a)if(f.getName().toLowerCase(Locale.US).contains(needle))r.add(f);runOnUiThread(()->showResults("Search: "+q,r));}).start();}
-    private void showResults(String t,List<File>r){showingResults=true;shown.clear();shown.addAll(r);sortFiles(shown);selected.clear();folderTitle.setText(t);path.setText("Search results · tap Up to return");status.setText(r.size()+" results · "+sortLabel());render();}
+    private void showResults(String t,List<File>r){
+        showingResults=true;
+        shown.clear();
+        shown.addAll(r);
+        sortFiles(shown);
+        selected.clear();
+        folderTitle.setText(t);
+        path.setVisibility(View.VISIBLE);
+        path.setText("From "+friendlyPath(cwd)+" · tap Up to return");
+        status.setText(itemCount(r.size())+" · "+sortLabel());
+        render();
+    }
 
     private void scanDupes(){cancel=false;File base=cwd;progress("Finding exact duplicates…");new Thread(()->{try{List<FileEngine.DupGroup>g=FileEngine.exactDuplicates(base,AppPrefs.showHidden(this),new P());runOnUiThread(()->duplicateResults(g));}catch(Exception e){err(e);}}).start();}
     private void duplicateResults(List<FileEngine.DupGroup>g){long reclaim=0;StringBuilder b=new StringBuilder();for(FileEngine.DupGroup x:g){reclaim+=x.size*(x.files.size()-1L);b.append('\n').append(x.files.size()).append(" copies · ").append(fmt(x.size)).append(" each\n");for(File f:x.files)b.append(f.getAbsolutePath()).append('\n');}if(g.isEmpty())b.append("No exact duplicates found.");final long save=reclaim;new MaterialAlertDialogBuilder(this).setTitle("Exact duplicates · reclaimable "+fmt(save)).setMessage(b.toString()).setPositiveButton("Close",null).setNeutralButton(g.isEmpty()?"Close":"Trash extra copies",(d,w)->{if(!g.isEmpty())confirmDuplicateCleanup(g);}).show();status.setText("Duplicate scan complete");}
@@ -330,6 +364,21 @@ public class MainActivity extends Activity {
     }
 
     private String fileType(File f){if(f.isDirectory())return "folder";String n=f.getName();int i=n.lastIndexOf('.');return i>=0&&i<n.length()-1?n.substring(i+1):"";}
+
+    private String itemCount(int count){return count==1?"1 item":count+" items";}
+
+    private String friendlyPath(File dir){
+        File home=Environment.getExternalStorageDirectory();
+        if(dir==null)return "Files";
+        String base=home.getAbsolutePath();
+        String full=dir.getAbsolutePath();
+        if(full.equals(base))return "Internal storage";
+        if(full.startsWith(base+File.separator)){
+            String rel=full.substring(base.length()+1);
+            return "Internal storage › "+rel.replace(File.separator," › ");
+        }
+        return full;
+    }
 
     private interface TextAction{void run(String value);}
 
