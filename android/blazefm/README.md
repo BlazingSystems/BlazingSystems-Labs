@@ -50,7 +50,7 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 
 ## Storage permission model
 
-Android 11+ requires **All files access** for a traditional full filesystem manager. BlazeFM opens the Android permission screen instead of pretending scoped storage provides equivalent access. Cloud/document-provider browsing uses the Storage Access Framework and can work independently of all-files access.
+Android 11+ requires **All files access** for a traditional full filesystem manager. BlazeFM opens the Android permission screen instead of pretending scoped storage provides equivalent access. Cloud/document-provider browsing uses the Storage Access Framework and can work independently of all-files access.\n\nThe App Manager also requests full installed-package visibility so it can actually list and back up installed apps on Android 11+. Both all-files access and broad package visibility are policy-sensitive permissions for app stores; the GitHub sideload build keeps them because they are core file-manager functions.
 
 ## Size and performance choices
 

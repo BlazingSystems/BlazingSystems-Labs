@@ -20,10 +20,10 @@ interface RemoteSession extends Closeable {
     String parent(String path);
 }
 
-final class RemoteFactory {
-    static RemoteSession connect(String proto,String host,int port,String user,String pass,String share,String domain,File appFiles)throws Exception{
+interface HostKeyPrompt { boolean confirm(String message); }\n\nfinal class RemoteFactory {
+    static RemoteSession connect(String proto,String host,int port,String user,String pass,String share,String domain,File appFiles,HostKeyPrompt hostKeyPrompt)throws Exception{
         if("FTP".equals(proto))return new FtpSession(host,port<=0?21:port,user,pass);
-        if("SFTP".equals(proto))return new SftpSession(host,port<=0?22:port,user,pass,appFiles);
+        if("SFTP".equals(proto))return new SftpSession(host,port<=0?22:port,user,pass,appFiles,hostKeyPrompt);
         if("SMB".equals(proto))return new SmbSession(host,share,user,pass,domain);
         throw new IOException("Unsupported protocol");
     }
@@ -47,8 +47,8 @@ final class FtpSession implements RemoteSession {
 
 final class SftpSession implements RemoteSession {
     private final Session session; private final ChannelSftp sftp;
-    SftpSession(String host,int port,String user,String pass,File files)throws Exception{
-        JSch j=new JSch();File known=new File(files,"known_hosts");if(!known.exists())known.createNewFile();j.setKnownHosts(known.getAbsolutePath());session=j.getSession(user,host,port);session.setPassword(pass);session.setConfig("StrictHostKeyChecking","ask");session.setConfig("PreferredAuthentications","publickey,password");session.setTimeout(15000);session.setUserInfo(new UserInfo(){public String getPassphrase(){return null;}public String getPassword(){return pass;}public boolean promptPassword(String m){return true;}public boolean promptPassphrase(String m){return false;}public boolean promptYesNo(String m){return true;}public void showMessage(String m){}});session.connect(15000);sftp=(ChannelSftp)session.openChannel("sftp");sftp.connect(15000);
+    SftpSession(String host,int port,String user,String pass,File files,HostKeyPrompt hostKeyPrompt)throws Exception{
+        JSch j=new JSch();File known=new File(files,"known_hosts");if(!known.exists())known.createNewFile();j.setKnownHosts(known.getAbsolutePath());session=j.getSession(user,host,port);session.setPassword(pass);session.setConfig("StrictHostKeyChecking","ask");session.setConfig("PreferredAuthentications","publickey,password");session.setTimeout(15000);session.setUserInfo(new UserInfo(){public String getPassphrase(){return null;}public String getPassword(){return pass;}public boolean promptPassword(String m){return true;}public boolean promptPassphrase(String m){return false;}public boolean promptYesNo(String m){return hostKeyPrompt!=null&&hostKeyPrompt.confirm(m);}public void showMessage(String m){}});session.connect(15000);sftp=(ChannelSftp)session.openChannel("sftp");sftp.connect(15000);
     }
     public List<Entry>list(String path)throws Exception{Vector<?>v=sftp.ls(path);ArrayList<Entry>r=new ArrayList<>();for(Object o:v){ChannelSftp.LsEntry e=(ChannelSftp.LsEntry)o;String n=e.getFilename();if(".".equals(n)||"..".equals(n))continue;r.add(new Entry(n,RemoteFactory.join(path,n),e.getAttrs().isDir(),e.getAttrs().getSize()));}FtpSession.sort(r);return r;}
     public void download(String p,OutputStream out)throws Exception{sftp.get(p,out);}
