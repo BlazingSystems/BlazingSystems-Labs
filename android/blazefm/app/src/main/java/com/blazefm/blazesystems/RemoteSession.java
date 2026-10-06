@@ -20,7 +20,9 @@ interface RemoteSession extends Closeable {
     String parent(String path);
 }
 
-interface HostKeyPrompt { boolean confirm(String message); }\n\nfinal class RemoteFactory {
+interface HostKeyPrompt { boolean confirm(String message); }
+
+final class RemoteFactory {
     static RemoteSession connect(String proto,String host,int port,String user,String pass,String share,String domain,File appFiles,HostKeyPrompt hostKeyPrompt)throws Exception{
         if("FTP".equals(proto))return new FtpSession(host,port<=0?21:port,user,pass);
         if("SFTP".equals(proto))return new SftpSession(host,port<=0?22:port,user,pass,appFiles,hostKeyPrompt);
