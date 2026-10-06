@@ -231,7 +231,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/blaze_surface"
-        app:itemActiveIndicatorStyle="@style/ShapeAppearanceOverlay.Material3.NavigationBarView.ActiveIndicator"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/menu_bottom"/>
 </LinearLayout>
