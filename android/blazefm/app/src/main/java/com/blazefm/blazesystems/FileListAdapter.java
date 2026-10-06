@@ -66,7 +66,7 @@ final class FileListAdapter extends BaseAdapter {
         BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(o.outWidth<=0||o.outHeight<=0)return null;
         int max=Math.max(o.outWidth,o.outHeight);o.inSampleSize=1;while(max/o.inSampleSize>target*2)o.inSampleSize*=2;o.inJustDecodeBounds=false;o.inPreferredConfig=Bitmap.Config.RGB_565;
         Bitmap src=BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(src==null)return null;int side=Math.min(src.getWidth(),src.getHeight());int x=(src.getWidth()-side)/2,y=(src.getHeight()-side)/2;
-        Bitmap crop=Bitmap.createBitmap(src,x,y,side,side);Bitmap out=Bitmap.createScaledBitmap(crop,target,target,true);if(crop!=src)crop.recycle();if(out!=src)src.recycle();return out;
+        Bitmap crop=Bitmap.createBitmap(src,x,y,side,side);Bitmap out=Bitmap.createScaledBitmap(crop,target,target,true);if(src!=out&&src!=crop)src.recycle();if(crop!=out)crop.recycle();return out;
     }
 
     private String meta(File f){
