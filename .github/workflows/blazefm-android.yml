@@ -2,7 +2,7 @@ name: BlazeFM Android
 
 on:
   push:
-    branches: [ main, blazefm-v1.2.0, blazefm-v1.2.0 ]
+    branches: [ main, blazefm-v1.2.0 ]
     paths:
       - 'android/blazefm/**'
       - '.github/workflows/blazefm-android.yml'
