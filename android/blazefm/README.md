@@ -1,35 +1,85 @@
 # BlazeFM
 
-**Type:** Native Android file manager  
 **Package:** `com.blazefm.blazesystems`  
-**Minimum Android:** API 21  
-**Stage:** Build and device validation
+**Minimum Android:** Android 5.0 / API 21  
+**Version:** 1.1.0  
+**Goal:** compact ES File Explorer-style file manager for older and low-memory Android devices.
 
-A lightweight Android file-manager study intended for low-memory devices.
+BlazeFM is a native Java file manager designed to stay usable on 512 MB-class devices while covering the practical tools that made classic all-in-one Android file managers useful.
 
-## Implemented Source Features
+## Implemented in 1.1.0
 
-- directory-first file browser;
+### Local files
+- directory-first browser with file sizes and type hints;
+- hidden-file toggle;
+- create folder / empty text file;
+- multi-select;
+- batch copy, move and paste;
+- rename;
+- BlazeFM Trash / recycle bin with restore and permanent purge;
+- favorites and recent files;
 - recursive filename search;
-- rename and recursive delete;
-- SHA-256 calculator;
-- exact duplicate detection using staged hashing;
-- visually similar-photo detection using perceptual dHash;
-- storage summary;
-- Android FileProvider integration;
-- no analytics or advertising framework.
+- SHA-256 properties;
+- ZIP creation and safe ZIP extraction with zip-slip protection.
 
-## Engineering Notes
+### Cleanup and analysis
+- exact duplicate finder: size -> sampled SHA-256 -> full SHA-256 verification;
+- optional duplicate cleanup to Trash while keeping one verified copy;
+- visually similar photo finder using perceptual dHash;
+- storage analyzer with category totals, empty-folder count and largest-file list.
 
-The public source includes an Android 11+ storage-permission correction so legacy READ/WRITE permission requests are not used after modern all-files access has been granted.
+### Media, documents and APKs
+- low-memory image preview;
+- text preview capped at 1 MiB;
+- audio and video preview using Android platform components;
+- external-app fallback for unsupported formats;
+- APK metadata inspection and installer hand-off;
+- installed-app manager with launch, Android app-info, uninstall hand-off and APK backup.
 
-## Validation Before Release
+### Network and cloud
+- FTP browser with upload/download, create folder, rename and delete;
+- SFTP browser with upload/download, create folder, rename and delete;
+- SMB2/3-oriented browser using jcifs-ng with SMB1 disabled;
+- Android Storage Access Framework browser for installed cloud/document providers such as Google Drive or Dropbox, without BlazeFM storing provider account passwords.
 
-- complete Gradle build with a supported JDK/Android Studio;
-- test storage permission flows across API 21 through current Android;
-- test file-open/share URI grants;
-- stress-test duplicate and image comparison on large libraries;
-- run lint and low-memory regression tests;
-- produce a signed release only after those checks pass.
+### Root
+- optional `su` detection;
+- separate root browser when root is actually available;
+- secure-file preview copied into app cache;
+- copy-out, rename and explicit permanent delete operations.
 
-The project is kept in Labs because a signed production APK has not been validated from this source tree.
+## Storage permission model
+
+Android 11+ requires **All files access** for a traditional full filesystem manager. BlazeFM opens the Android permission screen instead of pretending scoped storage provides equivalent access. Cloud/document-provider browsing uses the Storage Access Framework and can work independently of all-files access.
+
+## Size and performance choices
+
+- native Java UI; no Material/Compose framework;
+- no ads, analytics or telemetry SDK;
+- streaming copy/ZIP/hash operations with 64 KiB buffers;
+- no forced `largeHeap`;
+- image decoding is sampled;
+- similar-photo scans are capped at 5,000 images per folder pass to avoid pathological O(n²) memory/CPU behavior on low-RAM hardware;
+- release builds use R8 and resource shrinking.
+
+## Network security notes
+
+- SMB1 is disabled by default in the SMB client configuration;
+- SFTP excludes keyboard-interactive authentication and uses a persisted `known_hosts` file with first-use confirmation through JSch;
+- FTP is supported for legacy compatibility but is plaintext by design; use SFTP when credentials or file contents need transport encryption.
+
+## Build
+
+The repository CI uses JDK 17, Android SDK 35 and Gradle 8.9 with Android Gradle Plugin 8.7.3.
+
+```text
+gradle :app:assembleDebug :app:assembleRelease
+```
+
+The CI publishes:
+
+- an installable debug-signed APK for direct testing;
+- an unsigned/minified release APK;
+- SHA-256 checksums.
+
+A stable production signing key is intentionally **not** committed to this public repository. Production-signed updates should use a private keystore stored in repository secrets or an offline signing workflow.

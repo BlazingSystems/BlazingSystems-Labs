@@ -1,0 +1,9 @@
+R_DEF: Internal format may change without notice
+local
+color blaze_bg
+color blaze_orange
+color blaze_orange_dark
+color blaze_text
+drawable ic_launcher
+string app_name
+style AppTheme

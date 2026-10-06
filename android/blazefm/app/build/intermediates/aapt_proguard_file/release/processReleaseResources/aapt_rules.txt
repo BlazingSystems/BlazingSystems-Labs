@@ -1,0 +1,9 @@
+-keep class com.blazefm.blazesystems.AnalyzerActivity { <init>(); }
+-keep class com.blazefm.blazesystems.AppManagerActivity { <init>(); }
+-keep class com.blazefm.blazesystems.BlazeProvider { <init>(); }
+-keep class com.blazefm.blazesystems.CloudActivity { <init>(); }
+-keep class com.blazefm.blazesystems.CloudBrowserActivity { <init>(); }
+-keep class com.blazefm.blazesystems.MainActivity { <init>(); }
+-keep class com.blazefm.blazesystems.PreviewActivity { <init>(); }
+-keep class com.blazefm.blazesystems.RemoteActivity { <init>(); }
+-keep class com.blazefm.blazesystems.RootActivity { <init>(); }

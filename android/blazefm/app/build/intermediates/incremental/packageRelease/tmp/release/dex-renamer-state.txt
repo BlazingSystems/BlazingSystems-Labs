@@ -1,0 +1,4 @@
+#Tue Oct 06 15:52:34 UTC 2026
+base.0=/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

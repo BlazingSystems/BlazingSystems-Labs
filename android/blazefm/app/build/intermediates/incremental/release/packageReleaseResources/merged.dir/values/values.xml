@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="blaze_bg">#F5F6F8</color>
+    <color name="blaze_orange">#FF6D00</color>
+    <color name="blaze_orange_dark">#E65100</color>
+    <color name="blaze_text">#1C1B1F</color>
+    <string name="app_name">BlazeFM</string>
+    <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:navigationBarColor">#111111</item>
+        <item name="android:statusBarColor">#E65100</item>
+        
+        <item name="android:colorAccent">#FF6D00</item>
+        <item name="android:windowBackground">#F5F6F8</item>
+    </style>
+</resources>

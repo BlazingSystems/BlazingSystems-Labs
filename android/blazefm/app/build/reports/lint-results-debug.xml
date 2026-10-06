@@ -1,0 +1,1224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.7.3">
+
+    <issue
+        id="ScopedStorage"
+        severity="Warning"
+        message="The Google Play store has a policy that limits usage of MANAGE_EXTERNAL_STORAGE"
+        category="Correctness"
+        priority="8"
+        summary="Affected by scoped storage"
+        explanation="Scoped storage is enforced on Android 10+ (or Android 11+ if using `requestLegacyExternalStorage`). In particular, `WRITE_EXTERNAL_STORAGE` will no longer provide write access to all files; it will provide the equivalent of `READ_EXTERNAL_STORAGE` instead.&#xA;&#xA;As of Android 13, if you need to query or interact with MediaStore or media files on the shared storage, you should be using instead one or more new storage permissions:&#xA;* `android.permission.READ_MEDIA_IMAGES`&#xA;* `android.permission.READ_MEDIA_VIDEO`&#xA;* `android.permission.READ_MEDIA_AUDIO`&#xA;&#xA;and then add `maxSdkVersion=&quot;33&quot;` to the older permission. See the developer guide for how to do this: https://developer.android.com/about/versions/13/behavior-changes-13#granular-media-permissions&#xA;&#xA;The `MANAGE_EXTERNAL_STORAGE` permission can be used to manage all files, but it is rarely necessary and most apps on Google Play are not allowed to use it. Most apps should instead migrate to use scoped storage. To modify or delete files, apps should request write access from the user as described at https://goo.gle/android-mediastore-createwriterequest.&#xA;&#xA;To learn more, read these resources: Play policy: https://goo.gle/policy-storage-help Allowable use cases: https://goo.gle/policy-storage-usecases"
+        url="https://goo.gle/android-storage-usecases"
+        urls="https://goo.gle/android-storage-usecases"
+        errorLine1="    &lt;uses-permission android:name=&quot;android.permission.MANAGE_EXTERNAL_STORAGE&quot;/>"
+        errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml"
+            line="4"
+            column="36"/>
+    </issue>
+
+    <issue
+        id="OldTargetApi"
+        severity="Warning"
+        message="Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the `android.os.Build.VERSION_CODES` javadoc for details."
+        category="Correctness"
+        priority="6"
+        summary="Target SDK attribute is not targeting latest version"
+        explanation="When your application runs on a version of Android that is more recent than your `targetSdkVersion` specifies that it has been tested with, various compatibility modes kick in. This ensures that your application continues to work, but it may look out of place. For example, if the `targetSdkVersion` is less than 14, your app may get an option button in the UI.&#xA;&#xA;To fix this issue, set the `targetSdkVersion` to the highest available value. Then test your app to make sure everything works correctly. You may want to consult the compatibility notes to see what changes apply to each version you are adding support for: https://developer.android.com/reference/android/os/Build.VERSION_CODES.html as well as follow this guide:&#xA;https://developer.android.com/distribute/best-practices/develop/target-sdk.html"
+        url="https://developer.android.com/distribute/best-practices/develop/target-sdk.html"
+        urls="https://developer.android.com/distribute/best-practices/develop/target-sdk.html,https://developer.android.com/reference/android/os/Build.VERSION_CODES.html"
+        errorLine1="        targetSdk 35"
+        errorLine2="        ~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build.gradle"
+            line="10"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="UnusedAttribute"
+        severity="Warning"
+        message="Attribute `usesCleartextTraffic` is only used in API level 23 and higher (current min is 21)"
+        category="Correctness"
+        priority="6"
+        summary="Attribute unused on older versions"
+        explanation="This check finds attributes set in XML files that were introduced in a version newer than the oldest version targeted by your application (with the `minSdkVersion` attribute).&#xA;&#xA;This is not an error; the application will simply ignore the attribute. However, if the attribute is important to the appearance or functionality of your application, you should consider finding an alternative way to achieve the same result with only available attributes, and then you can optionally create a copy of the layout in a layout-vNN folder which will be used on API NN or higher where you can take advantage of the newer attribute.&#xA;&#xA;Note: This check does not only apply to attributes. For example, some tags can be unused too, such as the new `&lt;tag>` element in layouts introduced in API 21."
+        errorLine1="        android:usesCleartextTraffic=&quot;true&quot;>"
+        errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml"
+            line="17"
+            column="9"/>
+    </issue>
+
+    <issue
+        id="QueryPermissionsNeeded"
+        severity="Warning"
+        message="As of Android 11, this method no longer returns information about all apps; see https://g.co/dev/packagevisibility for details"
+        category="Correctness"
+        priority="5"
+        summary="Using APIs affected by query permissions"
+        explanation="Apps that target Android 11 cannot query or interact with other installed apps by default. If you need to query or interact with other installed apps, you may need to add a `&lt;queries>` declaration in your manifest.&#xA;&#xA;As a corollary, the methods `PackageManager#getInstalledPackages` and `PackageManager#getInstalledApplications` will no longer return information about all installed apps. To query specific apps or types of apps, you can use methods like `PackageManager#getPackageInfo` or `PackageManager#queryIntentActivities`."
+        url="https://g.co/dev/packagevisibility"
+        urls="https://g.co/dev/packagevisibility"
+        errorLine1="    private void load(){new Thread(()->{PackageManager pm=getPackageManager();List&lt;ApplicationInfo>a=pm.getInstalledApplications(PackageManager.GET_META_DATA);Collections.sort(a,(x,y)->pm.getApplicationLabel(x).toString().compareToIgnoreCase(pm.getApplicationLabel(y).toString()));apps.clear();apps.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;a.size();i++){ApplicationInfo x=a.get(i);rows[i]=pm.getApplicationLabel(x)+&quot;\n&quot;+x.packageName+(((x.flags&amp;ApplicationInfo.FLAG_SYSTEM)!=0)?&quot; · system&quot;:&quot;&quot;);}runOnUiThread(()->{list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; apps&quot;);});}).start();}"
+        errorLine2="                                                                                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="16"
+            column="105"/>
+    </issue>
+
+    <issue
+        id="DiscouragedApi"
+        severity="Warning"
+        message="Should not restrict activity to fixed orientation. This may not be suitable for different form factors, causing the app to be letterboxed."
+        category="Correctness"
+        priority="2"
+        summary="Using discouraged APIs"
+        explanation="Discouraged APIs are allowed and are not deprecated, but they may be unfit for common use (e.g. due to slow performance or subtle behavior)."
+        errorLine1="        &lt;activity android:name=&quot;.MainActivity&quot; android:screenOrientation=&quot;unspecified&quot; android:exported=&quot;true&quot;>"
+        errorLine2="                                               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml"
+            line="31"
+            column="48"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        severity="Warning"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        category="Security"
+        priority="6"
+        summary="Insecure TLS/SSL trust manager"
+        explanation="This check looks for X509TrustManager implementations whose `checkServerTrusted` or `checkClientTrusted` methods do nothing (thus trusting any certificate chain) which could result in insecure network traffic caused by trusting arbitrary TLS/SSL certificates presented by peers."
+        url="https://goo.gle/TrustAllX509TrustManager"
+        urls="https://goo.gle/TrustAllX509TrustManager">
+        <location
+            file="/home/runner/.gradle/caches/modules-2/files-2.1/commons-net/commons-net/3.11.1/f0689b01d2e3ef4b316bcc87360849a22f05d06d/commons-net-3.11.1.jar"/>
+    </issue>
+
+    <issue
+        id="TrustAllX509TrustManager"
+        severity="Warning"
+        message="`checkClientTrusted` is empty, which could cause insecure network traffic due to trusting arbitrary TLS/SSL certificates presented by peers"
+        category="Security"
+        priority="6"
+        summary="Insecure TLS/SSL trust manager"
+        explanation="This check looks for X509TrustManager implementations whose `checkServerTrusted` or `checkClientTrusted` methods do nothing (thus trusting any certificate chain) which could result in insecure network traffic caused by trusting arbitrary TLS/SSL certificates presented by peers."
+        url="https://goo.gle/TrustAllX509TrustManager"
+        urls="https://goo.gle/TrustAllX509TrustManager">
+        <location
+            file="/home/runner/.gradle/caches/modules-2/files-2.1/commons-net/commons-net/3.11.1/f0689b01d2e3ef4b316bcc87360849a22f05d06d/commons-net-3.11.1.jar"/>
+    </issue>
+
+    <issue
+        id="DataExtractionRules"
+        severity="Warning"
+        message="The attribute `android:allowBackup` is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute `android:dataExtractionRules` specifying an `@xml` resource which configures cloud backups and device transfers on Android 12 and higher."
+        category="Security"
+        priority="3"
+        summary="Missing data extraction rules"
+        explanation="Before Android 12, the attributes `android:allowBackup` and `android:fullBackupContent` were used to configure all forms of backup, including cloud backups, device-to-device transfers and adb backup.&#xA;&#xA;In Android 12 and higher, these attributes have been deprecated and will only apply to cloud backups. You should instead use the attribute `android:dataExtractionRules`, specifying an `@xml` resource that configures which files to back up, for cloud backups and for device-to-device transfers, separately. If your `minSdkVersion` supports older versions, you&apos;ll still want to specify an `android:fullBackupContent` resource if the default behavior is not right for your app."
+        url="https://developer.android.com/about/versions/12/backup-restore#xml-changes"
+        urls="https://developer.android.com/about/versions/12/backup-restore#xml-changes,https://goo.gle/DataExtractionRules"
+        errorLine1="        android:allowBackup=&quot;false&quot;"
+        errorLine2="                             ~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml"
+            line="14"
+            column="30"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.color.blaze_orange` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="    &lt;color name=&quot;blaze_orange&quot;>#FF6D00&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res/values/colors.xml"
+            line="2"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.color.blaze_orange_dark` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="    &lt;color name=&quot;blaze_orange_dark&quot;>#E65100&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res/values/colors.xml"
+            line="3"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.color.blaze_bg` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="    &lt;color name=&quot;blaze_bg&quot;>#F5F6F8&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res/values/colors.xml"
+            line="4"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.color.blaze_text` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="    &lt;color name=&quot;blaze_text&quot;>#1C1B1F&lt;/color>"
+        errorLine2="           ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res/values/colors.xml"
+            line="5"
+            column="12"/>
+    </issue>
+
+    <issue
+        id="UnusedResources"
+        severity="Warning"
+        message="The resource `R.string.app_name` appears to be unused"
+        category="Performance"
+        priority="3"
+        summary="Unused resources"
+        explanation="Unused resources make applications larger and slow down builds.&#xA;&#xA;&#xA;The unused resource check can ignore tests. If you want to include resources that are only referenced from tests, consider packaging them in a test source set instead.&#xA;&#xA;You can include test sources in the unused resource check by setting the system property lint.unused-resources.include-tests =true, and to exclude them (usually for performance reasons), use lint.unused-resources.exclude-tests =true.&#xA;,"
+        errorLine1="    &lt;string name=&quot;app_name&quot;>BlazeFM&lt;/string>"
+        errorLine2="            ~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res/values/strings.xml"
+            line="2"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){new Thread(()->{PackageManager pm=getPackageManager();List&lt;ApplicationInfo>a=pm.getInstalledApplications(PackageManager.GET_META_DATA);Collections.sort(a,(x,y)->pm.getApplicationLabel(x).toString().compareToIgnoreCase(pm.getApplicationLabel(y).toString()));apps.clear();apps.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;a.size();i++){ApplicationInfo x=a.get(i);rows[i]=pm.getApplicationLabel(x)+&quot;\n&quot;+x.packageName+(((x.flags&amp;ApplicationInfo.FLAG_SYSTEM)!=0)?&quot; · system&quot;:&quot;&quot;);}runOnUiThread(()->{list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; apps&quot;);});}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="16"
+            column="636"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){new Thread(()->{PackageManager pm=getPackageManager();List&lt;ApplicationInfo>a=pm.getInstalledApplications(PackageManager.GET_META_DATA);Collections.sort(a,(x,y)->pm.getApplicationLabel(x).toString().compareToIgnoreCase(pm.getApplicationLabel(y).toString()));apps.clear();apps.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;a.size();i++){ApplicationInfo x=a.get(i);rows[i]=pm.getApplicationLabel(x)+&quot;\n&quot;+x.packageName+(((x.flags&amp;ApplicationInfo.FLAG_SYSTEM)!=0)?&quot; · system&quot;:&quot;&quot;);}runOnUiThread(()->{list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; apps&quot;);});}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="16"
+            column="645"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void backup(ApplicationInfo a,String label){status.setText(&quot;Backing up &quot;+label+&quot;…&quot;);new Thread(()->{try{File src=new File(a.sourceDir);File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/AppBackups&quot;);dir.mkdirs();String safe=label.replaceAll(&quot;[^A-Za-z0-9._-]&quot;,&quot;_&quot;);File dst=FileEngine.unique(dir,safe+&quot;_&quot;+a.packageName+&quot;.apk&quot;);FileEngine.copy(src,dst);runOnUiThread(()->{status.setText(&quot;Backed up: &quot;+dst.getAbsolutePath());toast(&quot;APK backup complete&quot;);});}catch(Exception e){runOnUiThread(()->toast(&quot;Backup failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="18"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void backup(ApplicationInfo a,String label){status.setText(&quot;Backing up &quot;+label+&quot;…&quot;);new Thread(()->{try{File src=new File(a.sourceDir);File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/AppBackups&quot;);dir.mkdirs();String safe=label.replaceAll(&quot;[^A-Za-z0-9._-]&quot;,&quot;_&quot;);File dst=FileEngine.unique(dir,safe+&quot;_&quot;+a.packageName+&quot;.apk&quot;);FileEngine.copy(src,dst);runOnUiThread(()->{status.setText(&quot;Backed up: &quot;+dst.getAbsolutePath());toast(&quot;APK backup complete&quot;);});}catch(Exception e){runOnUiThread(()->toast(&quot;Backup failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="18"
+            column="453"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void backup(ApplicationInfo a,String label){status.setText(&quot;Backing up &quot;+label+&quot;…&quot;);new Thread(()->{try{File src=new File(a.sourceDir);File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/AppBackups&quot;);dir.mkdirs();String safe=label.replaceAll(&quot;[^A-Za-z0-9._-]&quot;,&quot;_&quot;);File dst=FileEngine.unique(dir,safe+&quot;_&quot;+a.packageName+&quot;.apk&quot;);FileEngine.copy(src,dst);runOnUiThread(()->{status.setText(&quot;Backed up: &quot;+dst.getAbsolutePath());toast(&quot;APK backup complete&quot;);});}catch(Exception e){runOnUiThread(()->toast(&quot;Backup failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                       ~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="18"
+            column="72"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void backup(ApplicationInfo a,String label){status.setText(&quot;Backing up &quot;+label+&quot;…&quot;);new Thread(()->{try{File src=new File(a.sourceDir);File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/AppBackups&quot;);dir.mkdirs();String safe=label.replaceAll(&quot;[^A-Za-z0-9._-]&quot;,&quot;_&quot;);File dst=FileEngine.unique(dir,safe+&quot;_&quot;+a.packageName+&quot;.apk&quot;);FileEngine.copy(src,dst);runOnUiThread(()->{status.setText(&quot;Backed up: &quot;+dst.getAbsolutePath());toast(&quot;APK backup complete&quot;);});}catch(Exception e){runOnUiThread(()->toast(&quot;Backup failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/AppManagerActivity.java"
+            line="18"
+            column="453"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){status.setText(&quot;Loading…&quot;);new Thread(()->{ArrayList&lt;E>out=new ArrayList&lt;>();try{String id=DocumentsContract.getDocumentId(current);Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,id);String[]pr={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE,DocumentsContract.Document.COLUMN_SIZE};try(Cursor c=getContentResolver().query(children,pr,null,null,null)){if(c!=null)while(c.moveToNext()){E e=new E();e.id=c.getString(0);e.name=c.getString(1);e.mime=c.getString(2);e.size=c.isNull(3)?0:c.getLong(3);e.dir=DocumentsContract.Document.MIME_TYPE_DIR.equals(e.mime);out.add(e);}}Collections.sort(out,(a,b)->{if(a.dir!=b.dir)return a.dir?-1:1;return a.name.compareToIgnoreCase(b.name);});runOnUiThread(()->{entries.clear();entries.addAll(out);String[]rows=new String[out.size()];for(int i=0;i&lt;rows.length;i++){E e=out.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;☁  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));path.setText(current.toString());status.setText(out.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Provider error: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="20"
+            column="1153"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){status.setText(&quot;Loading…&quot;);new Thread(()->{ArrayList&lt;E>out=new ArrayList&lt;>();try{String id=DocumentsContract.getDocumentId(current);Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,id);String[]pr={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE,DocumentsContract.Document.COLUMN_SIZE};try(Cursor c=getContentResolver().query(children,pr,null,null,null)){if(c!=null)while(c.moveToNext()){E e=new E();e.id=c.getString(0);e.name=c.getString(1);e.mime=c.getString(2);e.size=c.isNull(3)?0:c.getLong(3);e.dir=DocumentsContract.Document.MIME_TYPE_DIR.equals(e.mime);out.add(e);}}Collections.sort(out,(a,b)->{if(a.dir!=b.dir)return a.dir?-1:1;return a.name.compareToIgnoreCase(b.name);});runOnUiThread(()->{entries.clear();entries.addAll(out);String[]rows=new String[out.size()];for(int i=0;i&lt;rows.length;i++){E e=out.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;☁  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));path.setText(current.toString());status.setText(out.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Provider error: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="20"
+            column="1230"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){status.setText(&quot;Loading…&quot;);new Thread(()->{ArrayList&lt;E>out=new ArrayList&lt;>();try{String id=DocumentsContract.getDocumentId(current);Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,id);String[]pr={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE,DocumentsContract.Document.COLUMN_SIZE};try(Cursor c=getContentResolver().query(children,pr,null,null,null)){if(c!=null)while(c.moveToNext()){E e=new E();e.id=c.getString(0);e.name=c.getString(1);e.mime=c.getString(2);e.size=c.isNull(3)?0:c.getLong(3);e.dir=DocumentsContract.Document.MIME_TYPE_DIR.equals(e.mime);out.add(e);}}Collections.sort(out,(a,b)->{if(a.dir!=b.dir)return a.dir?-1:1;return a.name.compareToIgnoreCase(b.name);});runOnUiThread(()->{entries.clear();entries.addAll(out);String[]rows=new String[out.size()];for(int i=0;i&lt;rows.length;i++){E e=out.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;☁  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));path.setText(current.toString());status.setText(out.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Provider error: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                       ~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="20"
+            column="40"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){status.setText(&quot;Loading…&quot;);new Thread(()->{ArrayList&lt;E>out=new ArrayList&lt;>();try{String id=DocumentsContract.getDocumentId(current);Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,id);String[]pr={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE,DocumentsContract.Document.COLUMN_SIZE};try(Cursor c=getContentResolver().query(children,pr,null,null,null)){if(c!=null)while(c.moveToNext()){E e=new E();e.id=c.getString(0);e.name=c.getString(1);e.mime=c.getString(2);e.size=c.isNull(3)?0:c.getLong(3);e.dir=DocumentsContract.Document.MIME_TYPE_DIR.equals(e.mime);out.add(e);}}Collections.sort(out,(a,b)->{if(a.dir!=b.dir)return a.dir?-1:1;return a.name.compareToIgnoreCase(b.name);});runOnUiThread(()->{entries.clear();entries.addAll(out);String[]rows=new String[out.size()];for(int i=0;i&lt;rows.length;i++){E e=out.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;☁  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));path.setText(current.toString());status.setText(out.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Provider error: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           ~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="20"
+            column="1164"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){status.setText(&quot;Loading…&quot;);new Thread(()->{ArrayList&lt;E>out=new ArrayList&lt;>();try{String id=DocumentsContract.getDocumentId(current);Uri children=DocumentsContract.buildChildDocumentsUriUsingTree(tree,id);String[]pr={DocumentsContract.Document.COLUMN_DOCUMENT_ID,DocumentsContract.Document.COLUMN_DISPLAY_NAME,DocumentsContract.Document.COLUMN_MIME_TYPE,DocumentsContract.Document.COLUMN_SIZE};try(Cursor c=getContentResolver().query(children,pr,null,null,null)){if(c!=null)while(c.moveToNext()){E e=new E();e.id=c.getString(0);e.name=c.getString(1);e.mime=c.getString(2);e.size=c.isNull(3)?0:c.getLong(3);e.dir=DocumentsContract.Document.MIME_TYPE_DIR.equals(e.mime);out.add(e);}}Collections.sort(out,(a,b)->{if(a.dir!=b.dir)return a.dir?-1:1;return a.name.compareToIgnoreCase(b.name);});runOnUiThread(()->{entries.clear();entries.addAll(out);String[]rows=new String[out.size()];for(int i=0;i&lt;rows.length;i++){E e=out.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;☁  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));path.setText(current.toString());status.setText(out.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Provider error: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="20"
+            column="1230"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(E e){status.setText(&quot;Downloading…&quot;);new Thread(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Cloud&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(InputStream in=getContentResolver().openInputStream(uri(e));OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){byte[]b=new byte[64*1024];int n;while(in!=null&amp;&amp;(n=in.read(b))!=-1)o.write(b,0,n);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Save failed: &quot;+x.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="24"
+            column="497"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(E e){status.setText(&quot;Downloading…&quot;);new Thread(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Cloud&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(InputStream in=getContentResolver().openInputStream(uri(e));OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){byte[]b=new byte[64*1024];int n;while(in!=null&amp;&amp;(n=in.read(b))!=-1)o.write(b,0,n);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Save failed: &quot;+x.getMessage()));}}).start();}"
+        errorLine2="                                              ~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="24"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(E e){status.setText(&quot;Downloading…&quot;);new Thread(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Cloud&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(InputStream in=getContentResolver().openInputStream(uri(e));OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){byte[]b=new byte[64*1024];int n;while(in!=null&amp;&amp;(n=in.read(b))!=-1)o.write(b,0,n);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Save failed: &quot;+x.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="24"
+            column="497"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void upload(Uri src){status.setText(&quot;Uploading…&quot;);new Thread(()->{try{String name=&quot;upload.bin&quot;,mime=getContentResolver().getType(src);try(Cursor c=getContentResolver().query(src,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){if(c!=null&amp;&amp;c.moveToFirst())name=c.getString(0);}Uri out=DocumentsContract.createDocument(getContentResolver(),current,mime==null?&quot;application/octet-stream&quot;:mime,name);if(out==null)throw new IOException(&quot;Provider refused create&quot;);try(InputStream in=getContentResolver().openInputStream(src);OutputStream o=getContentResolver().openOutputStream(out)){byte[]b=new byte[64*1024];int n;while(in!=null&amp;&amp;o!=null&amp;&amp;(n=in.read(b))!=-1)o.write(b,0,n);}runOnUiThread(this::load);}catch(Exception e){runOnUiThread(()->toast(&quot;Upload failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                ~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/CloudBrowserActivity.java"
+            line="30"
+            column="49"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList&lt;File>x=new ArrayList&lt;>();for(File f:a)if((hidden||!f.getName().startsWith(&quot;.&quot;))&amp;&amp;!f.getName().equals(&quot;.BlazeFM_Trash&quot;))x.add(f);Collections.sort(x,(u,v)->{if(u.isDirectory()!=v.isDirectory())return u.isDirectory()?-1:1;return u.getName().compareToIgnoreCase(v.getName());});shown.addAll(x);}render();status.setText(shown.size()+&quot; items&quot;+((clipboard.size()>0)?&quot; · clipboard &quot;+clipboard.size():&quot;&quot;));}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="40"
+            column="600"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList&lt;File>x=new ArrayList&lt;>();for(File f:a)if((hidden||!f.getName().startsWith(&quot;.&quot;))&amp;&amp;!f.getName().equals(&quot;.BlazeFM_Trash&quot;))x.add(f);Collections.sort(x,(u,v)->{if(u.isDirectory()!=v.isDirectory())return u.isDirectory()?-1:1;return u.getName().compareToIgnoreCase(v.getName());});shown.addAll(x);}render();status.setText(shown.size()+&quot; items&quot;+((clipboard.size()>0)?&quot; · clipboard &quot;+clipboard.size():&quot;&quot;));}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="40"
+            column="613"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void prepareClipboard(boolean move){List&lt;File>a=selectedFiles();if(a.isEmpty())return;clipboard.clear();clipboard.addAll(a);clipboardMove=move;clearSelection();status.setText((move?&quot;Move&quot;:&quot;Copy&quot;)+&quot; clipboard: &quot;+clipboard.size()+&quot; · open destination and tap Paste&quot;);}"
+        errorLine2="                                                                                                                                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="55"
+            column="188"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void prepareClipboard(boolean move){List&lt;File>a=selectedFiles();if(a.isEmpty())return;clipboard.clear();clipboard.addAll(a);clipboardMove=move;clearSelection();status.setText((move?&quot;Move&quot;:&quot;Copy&quot;)+&quot; clipboard: &quot;+clipboard.size()+&quot; · open destination and tap Paste&quot;);}"
+        errorLine2="                                                                                                                                                                                                                ~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="55"
+            column="209"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void prepareClipboard(boolean move){List&lt;File>a=selectedFiles();if(a.isEmpty())return;clipboard.clear();clipboard.addAll(a);clipboardMove=move;clearSelection();status.setText((move?&quot;Move&quot;:&quot;Copy&quot;)+&quot; clipboard: &quot;+clipboard.size()+&quot; · open destination and tap Paste&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="55"
+            column="241"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void paste(){if(clipboard.isEmpty()){toast(&quot;Clipboard is empty&quot;);return;}File dest=cwd;ArrayList&lt;File>items=new ArrayList&lt;>(clipboard);boolean move=clipboardMove;progress((move?&quot;Moving&quot;:&quot;Copying&quot;)+&quot;…&quot;);new Thread(()->{int ok=0;for(File f:items){if(cancel)break;try{File out=FileEngine.unique(dest,f.getName());if(move)FileEngine.move(f,out);else FileEngine.copy(f,out);ok++;setProgress((move?&quot;Move&quot;:&quot;Copy&quot;)+&quot;: &quot;+f.getName());}catch(Exception e){setProgress(&quot;Failed: &quot;+f.getName()+&quot; · &quot;+e.getMessage());}}final int count=ok;runOnUiThread(()->{if(move){clipboard.clear();clipboardMove=false;}cancel=false;showDir(dest);status.setText(count+&quot; item(s) completed&quot;);});}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="56"
+            column="645"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void paste(){if(clipboard.isEmpty()){toast(&quot;Clipboard is empty&quot;);return;}File dest=cwd;ArrayList&lt;File>items=new ArrayList&lt;>(clipboard);boolean move=clipboardMove;progress((move?&quot;Moving&quot;:&quot;Copying&quot;)+&quot;…&quot;);new Thread(()->{int ok=0;for(File f:items){if(cancel)break;try{File out=FileEngine.unique(dest,f.getName());if(move)FileEngine.move(f,out);else FileEngine.copy(f,out);ok++;setProgress((move?&quot;Move&quot;:&quot;Copy&quot;)+&quot;: &quot;+f.getName());}catch(Exception e){setProgress(&quot;Failed: &quot;+f.getName()+&quot; · &quot;+e.getMessage());}}final int count=ok;runOnUiThread(()->{if(move){clipboard.clear();clipboardMove=false;}cancel=false;showDir(dest);status.setText(count+&quot; item(s) completed&quot;);});}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="56"
+            column="651"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void zipSelection(){List&lt;File>a=selectedFiles();if(a.isEmpty())return;String ts=new SimpleDateFormat(&quot;yyyyMMdd-HHmmss&quot;,Locale.US).format(new Date());File out=FileEngine.unique(cwd,&quot;BlazeFM-&quot;+ts+&quot;.zip&quot;);progress(&quot;Creating ZIP…&quot;);new Thread(()->{try{FileEngine.zip(a,out);runOnUiThread(()->{clearSelection();showDir(cwd);status.setText(&quot;Created &quot;+out.getName());});}catch(Exception e){runOnUiThread(()->toast(&quot;ZIP failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="57"
+            column="347"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void zipSelection(){List&lt;File>a=selectedFiles();if(a.isEmpty())return;String ts=new SimpleDateFormat(&quot;yyyyMMdd-HHmmss&quot;,Locale.US).format(new Date());File out=FileEngine.unique(cwd,&quot;BlazeFM-&quot;+ts+&quot;.zip&quot;);progress(&quot;Creating ZIP…&quot;);new Thread(()->{try{FileEngine.zip(a,out);runOnUiThread(()->{clearSelection();showDir(cwd);status.setText(&quot;Created &quot;+out.getName());});}catch(Exception e){runOnUiThread(()->toast(&quot;ZIP failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                          ~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="57"
+            column="347"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void extract(File zip){File dest=FileEngine.unique(cwd,stripExt(zip.getName()));dest.mkdirs();progress(&quot;Extracting &quot;+zip.getName()+&quot;…&quot;);new Thread(()->{try{FileEngine.unzip(zip,dest);runOnUiThread(()->{showDir(cwd);status.setText(&quot;Extracted to &quot;+dest.getName());});}catch(Exception e){runOnUiThread(()->toast(&quot;Extract failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="58"
+            column="243"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void extract(File zip){File dest=FileEngine.unique(cwd,stripExt(zip.getName()));dest.mkdirs();progress(&quot;Extracting &quot;+zip.getName()+&quot;…&quot;);new Thread(()->{try{FileEngine.unzip(zip,dest);runOnUiThread(()->{showDir(cwd);status.setText(&quot;Extracted to &quot;+dest.getName());});}catch(Exception e){runOnUiThread(()->toast(&quot;Extract failed: &quot;+e.getMessage()));}}).start();}"
+        errorLine2="                                                                                                                                                                                                                                                  ~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="58"
+            column="243"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showResults(String t,List&lt;File>r){showingResults=true;shown.clear();shown.addAll(r);selected.clear();String[]n=new String[r.size()];for(int i=0;i&lt;n.length;i++)n[i]=r.get(i).getAbsolutePath();list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,n));path.setText(t+&quot; · tap Up to return&quot;);status.setText(r.size()+&quot; results&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                   ~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="67"
+            column="308"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showResults(String t,List&lt;File>r){showingResults=true;shown.clear();shown.addAll(r);selected.clear();String[]n=new String[r.size()];for(int i=0;i&lt;n.length;i++)n[i]=r.get(i).getAbsolutePath();list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,n));path.setText(t+&quot; · tap Up to return&quot;);status.setText(r.size()+&quot; results&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                           ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="67"
+            column="348"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showResults(String t,List&lt;File>r){showingResults=true;shown.clear();shown.addAll(r);selected.clear();String[]n=new String[r.size()];for(int i=0;i&lt;n.length;i++)n[i]=r.get(i).getAbsolutePath();list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,n));path.setText(t+&quot; · tap Up to return&quot;);status.setText(r.size()+&quot; results&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                     ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="67"
+            column="310"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void showResults(String t,List&lt;File>r){showingResults=true;shown.clear();shown.addAll(r);selected.clear();String[]n=new String[r.size()];for(int i=0;i&lt;n.length;i++)n[i]=r.get(i).getAbsolutePath();list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,n));path.setText(t+&quot; · tap Up to return&quot;);status.setText(r.size()+&quot; results&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="67"
+            column="357"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void duplicateResults(List&lt;FileEngine.DupGroup>g){long reclaim=0;StringBuilder b=new StringBuilder();for(FileEngine.DupGroup x:g){reclaim+=x.size*(x.files.size()-1L);b.append(&apos;\n&apos;).append(x.files.size()).append(&quot; copies · &quot;).append(fmt(x.size)).append(&quot; each\n&quot;);for(File f:x.files)b.append(f.getAbsolutePath()).append(&apos;\n&apos;);}if(g.isEmpty())b.append(&quot;No exact duplicates found.&quot;);final long save=reclaim;new AlertDialog.Builder(this).setTitle(&quot;Exact duplicates · reclaimable &quot;+fmt(save)).setMessage(b.toString()).setPositiveButton(&quot;Close&quot;,null).setNeutralButton(g.isEmpty()?&quot;Close&quot;:&quot;Trash extra copies&quot;,(d,w)->{if(!g.isEmpty())confirmDuplicateCleanup(g);}).show();status.setText(&quot;Duplicate scan complete&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="70"
+            column="692"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void photoResults(List&lt;FileEngine.SimilarPair>p){StringBuilder b=new StringBuilder();int max=Math.min(p.size(),300);for(int i=0;i&lt;max;i++){FileEngine.SimilarPair x=p.get(i);b.append(&quot;distance &quot;).append(x.distance).append(&quot;\n&quot;).append(x.a.getAbsolutePath()).append(&quot;\n↔ &quot;).append(x.b.getAbsolutePath()).append(&quot;\n\n&quot;);}if(p.isEmpty())b.append(&quot;No visually similar photo pairs found.&quot;);if(p.size()>max)b.append(&quot;… &quot;).append(p.size()-max).append(&quot; more pairs not shown&quot;);new AlertDialog.Builder(this).setTitle(&quot;Similar photos · &quot;+p.size()+&quot; pairs&quot;).setMessage(b.toString()).setPositiveButton(&quot;Close&quot;,null).show();status.setText(&quot;Photo scan complete&quot;);}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="73"
+            column="638"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void progress(String s){cancel=false;status.setText(s+&quot; · tap status to cancel&quot;);status.setOnClickListener(v->{cancel=true;status.setText(&quot;Cancelling…&quot;);});}"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="87"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void progress(String s){cancel=false;status.setText(s+&quot; · tap status to cancel&quot;);status.setOnClickListener(v->{cancel=true;status.setText(&quot;Cancelling…&quot;);});}"
+        errorLine2="                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="87"
+            column="67"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void progress(String s){cancel=false;status.setText(s+&quot; · tap status to cancel&quot;);status.setOnClickListener(v->{cancel=true;status.setText(&quot;Cancelling…&quot;);});}"
+        errorLine2="                                                                                                                                                      ~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="87"
+            column="151"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void err(Exception e){runOnUiThread(()->{status.setText(&quot;Error&quot;);new AlertDialog.Builder(this).setTitle(&quot;Operation failed&quot;).setMessage(e.getClass().getSimpleName()+&quot;: &quot;+e.getMessage()).setPositiveButton(&quot;OK&quot;,null).show();});}"
+        errorLine2="                                                                    ~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/MainActivity.java"
+            line="90"
+            column="69"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void connect(){String pr=String.valueOf(proto.getSelectedItem());String h=host.getText().toString().trim();if(h.isEmpty()){toast(&quot;Enter a host&quot;);return;}int po=0;try{String x=port.getText().toString().trim();if(!x.isEmpty())po=Integer.parseInt(x);}catch(Exception ignored){}final int fp=po;status.setText(&quot;Connecting…&quot;);exec.execute(()->{try{RemoteSession s=RemoteFactory.connect(pr,h,fp,user.getText().toString(),pass.getText().toString(),share.getText().toString(),domain.getText().toString(),getFilesDir());session=s;String p=start.getText().toString().trim();cwd=p.isEmpty()?&quot;/&quot;:p;runOnUiThread(()->{connectBox.setVisibility(View.GONE);browserBox.setVisibility(View.VISIBLE);load();});}catch(Exception e){runOnUiThread(()->toast(&quot;Connect failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="22"
+            column="318"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){if(session==null)return;status.setText(&quot;Loading…&quot;);path.setText(cwd);exec.execute(()->{try{List&lt;RemoteSession.Entry>a=session.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RemoteSession.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;🌐  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);path.setText(cwd);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Error: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="23"
+            column="481"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){if(session==null)return;status.setText(&quot;Loading…&quot;);path.setText(cwd);exec.execute(()->{try{List&lt;RemoteSession.Entry>a=session.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RemoteSession.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;🌐  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);path.setText(cwd);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Error: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="23"
+            column="574"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){if(session==null)return;status.setText(&quot;Loading…&quot;);path.setText(cwd);exec.execute(()->{try{List&lt;RemoteSession.Entry>a=session.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RemoteSession.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;🌐  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);path.setText(cwd);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Error: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                               ~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="23"
+            column="64"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){if(session==null)return;status.setText(&quot;Loading…&quot;);path.setText(cwd);exec.execute(()->{try{List&lt;RemoteSession.Entry>a=session.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RemoteSession.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;🌐  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);path.setText(cwd);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Error: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="23"
+            column="490"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){if(session==null)return;status.setText(&quot;Loading…&quot;);path.setText(cwd);exec.execute(()->{try{List&lt;RemoteSession.Entry>a=session.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RemoteSession.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;🌐  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);path.setText(cwd);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Error: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="23"
+            column="574"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(RemoteSession.Entry e){status.setText(&quot;Downloading &quot;+e.name+&quot;…&quot;);exec.execute(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Remote&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){session.download(e.path,o);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Download failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                                ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="26"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(RemoteSession.Entry e){status.setText(&quot;Downloading &quot;+e.name+&quot;…&quot;);exec.execute(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Remote&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){session.download(e.path,o);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Download failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="26"
+            column="414"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(RemoteSession.Entry e){status.setText(&quot;Downloading &quot;+e.name+&quot;…&quot;);exec.execute(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Remote&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){session.download(e.path,o);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Download failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                                ~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="26"
+            column="65"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void download(RemoteSession.Entry e){status.setText(&quot;Downloading &quot;+e.name+&quot;…&quot;);exec.execute(()->{try{File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),&quot;BlazeFM/Remote&quot;);dir.mkdirs();File out=FileEngine.unique(dir,e.name);try(OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){session.download(e.path,o);}runOnUiThread(()->status.setText(&quot;Saved: &quot;+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast(&quot;Download failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="26"
+            column="414"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void upload(Uri u){status.setText(&quot;Uploading…&quot;);exec.execute(()->{try{String name=&quot;upload.bin&quot;;try(Cursor c=getContentResolver().query(u,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){if(c!=null&amp;&amp;c.moveToFirst())name=c.getString(0);}String dst=RemoteFactory.join(cwd,name);try(InputStream in=getContentResolver().openInputStream(u)){if(in==null)throw new IOException(&quot;Cannot read selected file&quot;);session.upload(dst,in);}runOnUiThread(()->{status.setText(&quot;Upload complete&quot;);load();});}catch(Exception e){runOnUiThread(()->toast(&quot;Upload failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                              ~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="29"
+            column="47"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void upload(Uri u){status.setText(&quot;Uploading…&quot;);exec.execute(()->{try{String name=&quot;upload.bin&quot;;try(Cursor c=getContentResolver().query(u,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){if(c!=null&amp;&amp;c.moveToFirst())name=c.getString(0);}String dst=RemoteFactory.join(cwd,name);try(InputStream in=getContentResolver().openInputStream(u)){if(in==null)throw new IOException(&quot;Cannot read selected file&quot;);session.upload(dst,in);}runOnUiThread(()->{status.setText(&quot;Upload complete&quot;);load();});}catch(Exception e){runOnUiThread(()->toast(&quot;Upload failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="29"
+            column="480"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void disconnect(){try{if(session!=null)session.close();}catch(Exception ignored){}session=null;browserBox.setVisibility(View.GONE);connectBox.setVisibility(View.VISIBLE);status.setText(&quot;Disconnected&quot;);}"
+        errorLine2="                                                                                                                                                                                                     ~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RemoteActivity.java"
+            line="34"
+            column="198"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){path.setText(cwd);status.setText(&quot;Reading as root…&quot;);exec.execute(()->{try{List&lt;RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;#  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Root read failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                         ~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="15"
+            column="458"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="Do not concatenate text displayed with `setText`. Use resource string with placeholders."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){path.setText(cwd);status.setText(&quot;Reading as root…&quot;);exec.execute(()->{try{List&lt;RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;#  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Root read failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="15"
+            column="533"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){path.setText(cwd);status.setText(&quot;Reading as root…&quot;);exec.execute(()->{try{List&lt;RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;#  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Root read failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                         ~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="15"
+            column="58"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){path.setText(cwd);status.setText(&quot;Reading as root…&quot;);exec.execute(()->{try{List&lt;RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;#  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Root read failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="15"
+            column="467"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void load(){path.setText(cwd);status.setText(&quot;Reading as root…&quot;);exec.execute(()->{try{List&lt;RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i&lt;rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?&quot;📁  &quot;:&quot;#  &quot;)+e.name+(e.dir?&quot;&quot;:&quot; · &quot;+fmt(e.size));}list.setAdapter(new ArrayAdapter&lt;String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+&quot; items&quot;);});}catch(Exception e){runOnUiThread(()->status.setText(&quot;Root read failed: &quot;+e.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="15"
+            column="533"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void preview(RootShell.Entry e){status.setText(&quot;Copying secure preview…&quot;);exec.execute(()->{try{File out=new File(getCacheDir(),&quot;root_preview_&quot;+System.currentTimeMillis()+&quot;_&quot;+e.name);RootShell.copyFile(e.path,out);runOnUiThread(()->{Intent i=new Intent(this,PreviewActivity.class);i.putExtra(&quot;path&quot;,out.getAbsolutePath());startActivity(i);status.setText(&quot;Preview copy created in app cache&quot;);});}catch(Exception x){runOnUiThread(()->toast(&quot;Preview failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="17"
+            column="60"/>
+    </issue>
+
+    <issue
+        id="SetTextI18n"
+        severity="Warning"
+        message="String literal in `setText` can not be translated. Use Android resources instead."
+        category="Internationalization"
+        priority="6"
+        summary="TextView Internationalization"
+        explanation="When calling `TextView#setText`&#xA;* Never call `Number#toString()` to format numbers; it will not handle fraction separators and locale-specific digits properly. Consider using `String#format` with proper format specifications (`%d` or `%f`) instead.&#xA;* Do not pass a string literal (e.g. &quot;Hello&quot;) to display text. Hardcoded text can not be properly translated to other languages. Consider using Android resource strings instead.&#xA;* Do not build messages by concatenating text chunks. Such messages can not be properly translated."
+        url="https://developer.android.com/guide/topics/resources/localization.html"
+        urls="https://developer.android.com/guide/topics/resources/localization.html"
+        errorLine1="    private void preview(RootShell.Entry e){status.setText(&quot;Copying secure preview…&quot;);exec.execute(()->{try{File out=new File(getCacheDir(),&quot;root_preview_&quot;+System.currentTimeMillis()+&quot;_&quot;+e.name);RootShell.copyFile(e.path,out);runOnUiThread(()->{Intent i=new Intent(this,PreviewActivity.class);i.putExtra(&quot;path&quot;,out.getAbsolutePath());startActivity(i);status.setText(&quot;Preview copy created in app cache&quot;);});}catch(Exception x){runOnUiThread(()->toast(&quot;Preview failed: &quot;+x.getMessage()));}});}"
+        errorLine2="                                                                                                                                                                                                                                                                                                                                                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/java/com/blazefm/blazesystems/RootActivity.java"
+            line="17"
+            column="367"/>
+    </issue>
+
+</issues>

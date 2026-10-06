@@ -1,0 +1,127 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.blazefm.blazesystems"
+4    android:versionCode="11"
+5    android:versionName="1.1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="21"
+9        android:targetSdkVersion="35" />
+10
+11    <uses-permission
+11-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:2:5-106
+12        android:name="android.permission.READ_EXTERNAL_STORAGE"
+12-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:2:22-77
+13        android:maxSdkVersion="32" />
+13-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:2:78-104
+14    <uses-permission
+14-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:3:5-107
+15        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+15-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:3:22-78
+16        android:maxSdkVersion="29" />
+16-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:3:79-105
+17    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+17-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:4:5-81
+17-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:4:22-79
+18    <uses-permission android:name="android.permission.INTERNET" />
+18-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:5:5-66
+18-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:5:22-64
+19    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+19-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:6:5-78
+19-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:6:22-76
+20    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+20-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:7:5-82
+20-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:7:22-80
+21
+22    <application
+22-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:10:5-37:19
+23        android:allowBackup="false"
+23-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:14:9-36
+24        android:extractNativeLibs="true"
+25        android:icon="@drawable/ic_launcher"
+25-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:13:9-45
+26        android:label="BlazeFM"
+26-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:12:9-32
+27        android:largeHeap="false"
+27-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:15:9-34
+28        android:requestLegacyExternalStorage="true"
+28-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:16:9-52
+29        android:theme="@style/AppTheme"
+29-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:11:9-40
+30        android:usesCleartextTraffic="true" >
+30-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:17:9-44
+31        <provider
+31-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:18:9-22:49
+32            android:name="com.blazefm.blazesystems.BlazeProvider"
+32-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:19:13-42
+33            android:authorities="com.blazefm.blazesystems.files"
+33-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:20:13-65
+34            android:exported="false"
+34-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:21:13-37
+35            android:grantUriPermissions="true" />
+35-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:22:13-47
+36
+37        <activity
+37-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:24:9-77
+38            android:name="com.blazefm.blazesystems.PreviewActivity"
+38-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:24:19-50
+39            android:exported="false" />
+39-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:24:51-75
+40        <activity
+40-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:25:9-78
+41            android:name="com.blazefm.blazesystems.AnalyzerActivity"
+41-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:25:19-51
+42            android:exported="false" />
+42-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:25:52-76
+43        <activity
+43-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:26:9-80
+44            android:name="com.blazefm.blazesystems.AppManagerActivity"
+44-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:26:19-53
+45            android:exported="false" />
+45-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:26:54-78
+46        <activity
+46-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:27:9-75
+47            android:name="com.blazefm.blazesystems.CloudActivity"
+47-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:27:19-48
+48            android:exported="false" />
+48-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:27:49-73
+49        <activity
+49-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:28:9-82
+50            android:name="com.blazefm.blazesystems.CloudBrowserActivity"
+50-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:28:19-55
+51            android:exported="false" />
+51-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:28:56-80
+52        <activity
+52-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:29:9-76
+53            android:name="com.blazefm.blazesystems.RemoteActivity"
+53-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:29:19-49
+54            android:exported="false" />
+54-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:29:50-74
+55        <activity
+55-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:30:9-74
+56            android:name="com.blazefm.blazesystems.RootActivity"
+56-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:30:19-47
+57            android:exported="false" />
+57-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:30:48-72
+58        <activity
+58-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:31:9-36:20
+59            android:name="com.blazefm.blazesystems.MainActivity"
+59-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:31:19-47
+60            android:exported="true"
+60-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:31:88-111
+61            android:screenOrientation="unspecified" >
+61-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:31:48-87
+62            <intent-filter>
+62-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:32:13-35:29
+63                <action android:name="android.intent.action.MAIN" />
+63-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:33:17-68
+63-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:33:25-66
+64
+65                <category android:name="android.intent.category.LAUNCHER" />
+65-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:34:17-76
+65-->/home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/AndroidManifest.xml:34:27-74
+66            </intent-filter>
+67        </activity>
+68    </application>
+69
+70</manifest>

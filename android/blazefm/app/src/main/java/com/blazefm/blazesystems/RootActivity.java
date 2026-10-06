@@ -1,0 +1,26 @@
+package com.blazefm.blazesystems;
+
+import android.app.*;
+import android.content.*;
+import android.os.*;
+import android.widget.*;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.*;
+
+public class RootActivity extends Activity {
+    private final ExecutorService exec=Executors.newSingleThreadExecutor();private final ArrayList<RootShell.Entry>entries=new ArrayList<>();private ListView list;private TextView path,status;private String cwd="/";
+    @Override public void onCreate(Bundle b){super.onCreate(b);build();if(!RootShell.available()){new AlertDialog.Builder(this).setTitle("Root unavailable").setMessage("No working su/root shell was detected. BlazeFM will not fake root access.").setPositiveButton("Close",(d,w)->finish()).show();}else load();}
+    private void build(){LinearLayout r=new LinearLayout(this);r.setOrientation(LinearLayout.VERTICAL);TextView h=Ui.text(this,"Root Browser",20);h.setTextColor(android.graphics.Color.WHITE);h.setBackgroundColor(Ui.ORANGE_DARK);r.addView(h);path=Ui.text(this,cwd,11);r.addView(path);LinearLayout b=Ui.toolbar(this);Button up=Ui.button(this,"Up"),go=Ui.button(this,"Go to path"),refresh=Ui.button(this,"Refresh");Ui.equalAdd(b,up);Ui.equalAdd(b,go);Ui.equalAdd(b,refresh);r.addView(b);list=new ListView(this);r.addView(list,new LinearLayout.LayoutParams(-1,0,1));status=Ui.text(this,"",11);r.addView(status);setContentView(r);up.setOnClickListener(v->{cwd=RootShell.parent(cwd);load();});go.setOnClickListener(v->go());refresh.setOnClickListener(v->load());list.setOnItemClickListener((p,v,pos,id)->{RootShell.Entry e=entries.get(pos);if(e.dir){cwd=e.path;load();}else preview(e);});list.setOnItemLongClickListener((p,v,pos,id)->{menu(entries.get(pos));return true;});}
+    private void load(){path.setText(cwd);status.setText("Reading as root…");exec.execute(()->{try{List<RootShell.Entry>a=RootShell.list(cwd);runOnUiThread(()->{entries.clear();entries.addAll(a);String[]rows=new String[a.size()];for(int i=0;i<rows.length;i++){RootShell.Entry e=a.get(i);rows[i]=(e.dir?"📁  ":"#  ")+e.name+(e.dir?"":" · "+fmt(e.size));}list.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,rows));status.setText(a.size()+" items");});}catch(Exception e){runOnUiThread(()->status.setText("Root read failed: "+e.getMessage()));}});}
+    private void go(){EditText e=new EditText(this);e.setText(cwd);new AlertDialog.Builder(this).setTitle("Root path").setView(e).setPositiveButton("Go",(d,w)->{cwd=e.getText().toString().trim();if(cwd.isEmpty())cwd="/";load();}).setNegativeButton("Cancel",null).show();}
+    private void preview(RootShell.Entry e){status.setText("Copying secure preview…");exec.execute(()->{try{File out=new File(getCacheDir(),"root_preview_"+System.currentTimeMillis()+"_"+e.name);RootShell.copyFile(e.path,out);runOnUiThread(()->{Intent i=new Intent(this,PreviewActivity.class);i.putExtra("path",out.getAbsolutePath());startActivity(i);status.setText("Preview copy created in app cache");});}catch(Exception x){runOnUiThread(()->toast("Preview failed: "+x.getMessage()));}});}
+    private void menu(RootShell.Entry e){String[]o=e.dir?new String[]{"Open","Rename","Delete as root"}:new String[]{"Preview","Copy to Downloads","Rename","Delete as root"};new AlertDialog.Builder(this).setTitle(e.name).setItems(o,(d,w)->{if(e.dir&&w==0){cwd=e.path;load();return;}if(!e.dir&&w==0){preview(e);return;}if(!e.dir&&w==1){copyOut(e);return;}int r=e.dir?1:2;if(w==r)rename(e);if(w==r+1)delete(e);}).show();}
+    private void copyOut(RootShell.Entry e){exec.execute(()->{try{File d=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),"BlazeFM/Root");d.mkdirs();File out=FileEngine.unique(d,e.name);RootShell.copyFile(e.path,out);runOnUiThread(()->toast("Saved: "+out.getAbsolutePath()));}catch(Exception x){runOnUiThread(()->toast("Copy failed: "+x.getMessage()));}});}
+    private void rename(RootShell.Entry e){EditText n=new EditText(this);n.setText(e.name);new AlertDialog.Builder(this).setTitle("Rename as root").setView(n).setPositiveButton("Rename",(d,w)->exec.execute(()->{try{RootShell.rename(e.path,("/".equals(cwd)?"/":cwd+"/")+n.getText().toString().trim());runOnUiThread(this::load);}catch(Exception x){runOnUiThread(()->toast("Rename failed: "+x.getMessage()));}})).setNegativeButton("Cancel",null).show();}
+    private void delete(RootShell.Entry e){new AlertDialog.Builder(this).setTitle("Permanent root delete?").setMessage(e.path+"\n\nThis bypasses BlazeFM Trash.").setPositiveButton("DELETE",(d,w)->exec.execute(()->{try{RootShell.delete(e.path);runOnUiThread(this::load);}catch(Exception x){runOnUiThread(()->toast("Delete failed: "+x.getMessage()));}})).setNegativeButton("Cancel",null).show();}
+    private String fmt(long n){String[]u={"B","KB","MB","GB"};double v=n;int i=0;while(v>=1024&&i<u.length-1){v/=1024;i++;}return String.format(Locale.US,"%.1f %s",v,u[i]);}
+    private void toast(String s){Toast.makeText(this,s,Toast.LENGTH_LONG).show();}
+    @Override public void onBackPressed(){if(!"/".equals(cwd)){cwd=RootShell.parent(cwd);load();}else super.onBackPressed();}
+    @Override protected void onDestroy(){exec.shutdownNow();super.onDestroy();}
+}

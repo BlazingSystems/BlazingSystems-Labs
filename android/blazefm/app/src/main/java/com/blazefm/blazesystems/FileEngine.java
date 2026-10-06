@@ -2,6 +2,7 @@ package com.blazefm.blazesystems;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.webkit.MimeTypeMap;
 import java.io.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -9,33 +10,59 @@ import java.util.zip.*;
 
 public final class FileEngine {
     private FileEngine() {}
-    public interface Progress { void update(String text, int done, int total); boolean cancelled(); }
-    public static final class DupGroup { public final String key; public final long size; public final List<File> files; DupGroup(String k,long s,List<File> f){key=k;size=s;files=f;} }
-    public static List<File> walk(File root, Progress p) {
-        ArrayList<File> out=new ArrayList<>(); ArrayDeque<File> q=new ArrayDeque<>(); if(root!=null)q.add(root); int n=0;
-        while(!q.isEmpty() && !p.cancelled()) { File f=q.removeFirst(); File[] a;
-            try { a=f.listFiles(); } catch(SecurityException e){continue;} if(a==null)continue;
-            for(File x:a){ if(p.cancelled())break; if(x.isDirectory())q.addLast(x); else {out.add(x); if((++n&127)==0)p.update("Scanning… "+n,0,0);} }
-        } return out;
+    public interface Progress { void update(String text,int done,int total); boolean cancelled(); }
+    public static final class DupGroup { public final String key; public final long size; public final List<File> files; DupGroup(String k,long s,List<File>f){key=k;size=s;files=f;} }
+    public static final class SimilarPair { public final File a,b; public final int distance; SimilarPair(File x,File y,int d){a=x;b=y;distance=d;} }
+    public static final class Summary { public long bytes; public int files,dirs,emptyDirs; public final long[] categoryBytes=new long[7]; public final int[] categoryCount=new int[7]; public final ArrayList<File> largest=new ArrayList<>(); }
+
+    public static List<File> walk(File root,boolean hidden,Progress p){
+        ArrayList<File>out=new ArrayList<>();ArrayDeque<File>q=new ArrayDeque<>();if(root!=null)q.add(root);int n=0;
+        while(!q.isEmpty()&&!p.cancelled()){
+            File d=q.removeFirst();File[]a;try{a=d.listFiles();}catch(SecurityException e){continue;}if(a==null)continue;
+            for(File x:a){if(p.cancelled())break;if(!hidden&&x.getName().startsWith("."))continue;if(x.isDirectory())q.addLast(x);else{out.add(x);if((++n&127)==0)p.update("Scanning… "+n,0,0);}}
+        }return out;
     }
-    public static List<DupGroup> exactDuplicates(File root, Progress p) throws Exception {
-        List<File> all=walk(root,p); Map<Long,List<File>> sizes=new HashMap<>(); int i=0;
-        for(File f:all){ if(f.length()>0) sizes.computeIfAbsent(f.length(),k->new ArrayList<>()).add(f); }
-        Map<String,List<File>> quick=new HashMap<>();
-        for(List<File> g:sizes.values()) if(g.size()>1) for(File f:g){ if(p.cancelled())return Collections.emptyList(); String k=f.length()+":"+sampleHash(f); quick.computeIfAbsent(k,x->new ArrayList<>()).add(f); p.update("Quick hashing: "+f.getName(),++i,all.size()); }
-        Map<String,List<File>> full=new LinkedHashMap<>();
-        for(List<File> g:quick.values()) if(g.size()>1) for(File f:g){ if(p.cancelled())return Collections.emptyList(); String h=sha256(f); full.computeIfAbsent(h,x->new ArrayList<>()).add(f); p.update("Verifying: "+f.getName(),i,all.size()); }
-        ArrayList<DupGroup> r=new ArrayList<>(); for(Map.Entry<String,List<File>> e:full.entrySet()) if(e.getValue().size()>1) r.add(new DupGroup(e.getKey(),e.getValue().get(0).length(),e.getValue()));
-        Collections.sort(r,(a,b)->Long.compare(b.size*(b.files.size()-1L),a.size*(a.files.size()-1L))); return r;
+    public static List<DupGroup> exactDuplicates(File root,boolean hidden,Progress p)throws Exception{
+        List<File>all=walk(root,hidden,p);Map<Long,List<File>>sizes=new HashMap<>();for(File f:all)if(f.length()>0)bucket(sizes,f.length()).add(f);
+        Map<String,List<File>>quick=new HashMap<>();int i=0;
+        for(List<File>g:sizes.values())if(g.size()>1)for(File f:g){if(p.cancelled())return Collections.emptyList();String k=f.length()+":"+sampleHash(f);bucket(quick,k).add(f);p.update("Quick hash: "+f.getName(),++i,all.size());}
+        Map<String,List<File>>full=new LinkedHashMap<>();
+        for(List<File>g:quick.values())if(g.size()>1)for(File f:g){if(p.cancelled())return Collections.emptyList();String h=sha256(f);bucket(full,h).add(f);p.update("Verify: "+f.getName(),i,all.size());}
+        ArrayList<DupGroup>r=new ArrayList<>();for(Map.Entry<String,List<File>>e:full.entrySet())if(e.getValue().size()>1)r.add(new DupGroup(e.getKey(),e.getValue().get(0).length(),e.getValue()));
+        Collections.sort(r,(a,b)->Long.compare(b.size*(b.files.size()-1L),a.size*(a.files.size()-1L)));return r;
     }
-    private static String sampleHash(File f)throws Exception { MessageDigest md=MessageDigest.getInstance("SHA-256"); long len=f.length(); byte[] b=new byte[8192]; try(RandomAccessFile r=new RandomAccessFile(f,"r")){ int n=r.read(b); if(n>0)md.update(b,0,n); if(len>16384){r.seek(Math.max(0,len/2-4096));n=r.read(b);if(n>0)md.update(b,0,n);r.seek(Math.max(0,len-8192));n=r.read(b);if(n>0)md.update(b,0,n);} } return hex(md.digest()); }
-    public static String sha256(File f)throws Exception { MessageDigest md=MessageDigest.getInstance("SHA-256"); byte[] b=new byte[64*1024]; try(InputStream in=new BufferedInputStream(new FileInputStream(f),64*1024)){int n;while((n=in.read(b))!=-1)md.update(b,0,n);} return hex(md.digest()); }
-    private static String hex(byte[] b){StringBuilder s=new StringBuilder(b.length*2);for(byte x:b)s.append(String.format(Locale.US,"%02x",x&255));return s.toString();}
-    public static long dHash(File f){ BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),o);int m=Math.max(o.outWidth,o.outHeight);o.inSampleSize=1;while(m/o.inSampleSize>256)o.inSampleSize*=2;o.inJustDecodeBounds=false;o.inPreferredConfig=Bitmap.Config.RGB_565;Bitmap src=BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(src==null)return Long.MIN_VALUE;Bitmap b=Bitmap.createScaledBitmap(src,9,8,true);if(b!=src)src.recycle();long h=0;for(int y=0;y<8;y++)for(int x=0;x<8;x++){int a=b.getPixel(x,y),c=b.getPixel(x+1,y);int ga=((a>>16)&255)*30+((a>>8)&255)*59+(a&255)*11;int gc=((c>>16)&255)*30+((c>>8)&255)*59+(c&255)*11;h=(h<<1)|(ga>gc?1:0);}b.recycle();return h; }
+    public static List<SimilarPair> similarPhotos(File root,boolean hidden,Progress p)throws Exception{
+        List<File>all=walk(root,hidden,p);ArrayList<File>im=new ArrayList<>();ArrayList<Long>hs=new ArrayList<>();int done=0;
+        for(File f:all){if(p.cancelled())break;if(isImage(f)){long h=dHash(f);if(h!=Long.MIN_VALUE){im.add(f);hs.add(h);}p.update("Photo hash: "+f.getName(),++done,all.size());}}
+        if(im.size()>5000)throw new IOException("Too many images for one low-memory pass ("+im.size()+"). Run the scan inside a smaller folder.");
+        ArrayList<SimilarPair>pairs=new ArrayList<>();
+        for(int i=0;i<im.size()&&!p.cancelled();i++){for(int j=i+1;j<im.size();j++){int d=hamming(hs.get(i),hs.get(j));if(d<=6)pairs.add(new SimilarPair(im.get(i),im.get(j),d));}if((i&31)==0)p.update("Comparing photos…",i,im.size());}
+        Collections.sort(pairs,(a,b)->a.distance<b.distance?-1:(a.distance==b.distance?0:1));return pairs;
+    }
+    private static String sampleHash(File f)throws Exception{MessageDigest md=MessageDigest.getInstance("SHA-256");long len=f.length();byte[]b=new byte[8192];try(RandomAccessFile r=new RandomAccessFile(f,"r")){int n=r.read(b);if(n>0)md.update(b,0,n);if(len>16384){r.seek(Math.max(0,len/2-4096));n=r.read(b);if(n>0)md.update(b,0,n);r.seek(Math.max(0,len-8192));n=r.read(b);if(n>0)md.update(b,0,n);}}return hex(md.digest());}
+    public static String sha256(File f)throws Exception{MessageDigest md=MessageDigest.getInstance("SHA-256");byte[]b=new byte[64*1024];try(InputStream in=new BufferedInputStream(new FileInputStream(f),64*1024)){int n;while((n=in.read(b))!=-1)md.update(b,0,n);}return hex(md.digest());}
+    private static String hex(byte[]b){StringBuilder s=new StringBuilder(b.length*2);for(byte x:b)s.append(String.format(Locale.US,"%02x",x&255));return s.toString();}
+    public static long dHash(File f){BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(o.outWidth<=0||o.outHeight<=0)return Long.MIN_VALUE;int m=Math.max(o.outWidth,o.outHeight);o.inSampleSize=1;while(m/o.inSampleSize>512)o.inSampleSize*=2;o.inJustDecodeBounds=false;o.inPreferredConfig=Bitmap.Config.RGB_565;Bitmap src=BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(src==null)return Long.MIN_VALUE;Bitmap b=Bitmap.createScaledBitmap(src,9,8,true);if(b!=src)src.recycle();long h=0;for(int y=0;y<8;y++)for(int x=0;x<8;x++){int a=b.getPixel(x,y),c=b.getPixel(x+1,y);int ga=((a>>16)&255)*30+((a>>8)&255)*59+(a&255)*11;int gc=((c>>16)&255)*30+((c>>8)&255)*59+(c&255)*11;h=(h<<1)|(ga>gc?1:0);}b.recycle();return h;}
     public static int hamming(long a,long b){return Long.bitCount(a^b);}
-    public static boolean isImage(File f){String n=f.getName().toLowerCase(Locale.US);return n.endsWith(".jpg")||n.endsWith(".jpeg")||n.endsWith(".png")||n.endsWith(".webp")||n.endsWith(".bmp");}
-    public static void copy(File src,File dst)throws IOException{if(src.isDirectory()){if(!dst.exists()&&!dst.mkdirs())throw new IOException("Cannot create "+dst);File[] a=src.listFiles();if(a!=null)for(File f:a)copy(f,new File(dst,f.getName()));}else{File par=dst.getParentFile();if(par!=null&&!par.exists())par.mkdirs();try(InputStream in=new BufferedInputStream(new FileInputStream(src));OutputStream out=new BufferedOutputStream(new FileOutputStream(dst))){byte[] b=new byte[64*1024];int n;while((n=in.read(b))!=-1)out.write(b,0,n);}}}
+    public static boolean isImage(File f){String n=lower(f);return n.endsWith(".jpg")||n.endsWith(".jpeg")||n.endsWith(".png")||n.endsWith(".webp")||n.endsWith(".bmp")||n.endsWith(".gif");}
+    public static boolean isText(File f){String n=lower(f);String[]e={".txt",".log",".md",".json",".xml",".html",".htm",".css",".js",".java",".kt",".c",".cpp",".h",".py",".sh",".ini",".cfg",".csv",".yaml",".yml"};for(String x:e)if(n.endsWith(x))return true;return false;}
+    public static boolean isAudio(File f){String n=lower(f);return n.endsWith(".mp3")||n.endsWith(".wav")||n.endsWith(".m4a")||n.endsWith(".aac")||n.endsWith(".ogg")||n.endsWith(".flac");}
+    public static boolean isVideo(File f){String n=lower(f);return n.endsWith(".mp4")||n.endsWith(".mkv")||n.endsWith(".webm")||n.endsWith(".3gp")||n.endsWith(".avi")||n.endsWith(".mov");}
+    public static boolean isArchive(File f){String n=lower(f);return n.endsWith(".zip");}
+    public static boolean isApk(File f){return lower(f).endsWith(".apk");}
+    private static String lower(File f){return f.getName().toLowerCase(Locale.US);}
+    public static String mime(File f){String ext=MimeTypeMap.getFileExtensionFromUrl(f.getName());String m=MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext==null?"":ext.toLowerCase(Locale.US));return m==null?"application/octet-stream":m;}
+
+    public static void copy(File src,File dst)throws IOException{if(src.isDirectory()){if(!dst.exists()&&!dst.mkdirs())throw new IOException("Cannot create "+dst);File[]a=src.listFiles();if(a!=null)for(File f:a)copy(f,new File(dst,f.getName()));}else{File par=dst.getParentFile();if(par!=null&&!par.exists()&&!par.mkdirs())throw new IOException("Cannot create "+par);try(InputStream in=new BufferedInputStream(new FileInputStream(src));OutputStream out=new BufferedOutputStream(new FileOutputStream(dst))){byte[]b=new byte[64*1024];int n;while((n=in.read(b))!=-1)out.write(b,0,n);}}}
+    public static void move(File src,File dst)throws IOException{File p=dst.getParentFile();if(p!=null&&!p.exists())p.mkdirs();if(src.renameTo(dst))return;copy(src,dst);if(!delete(src))throw new IOException("Copied but could not remove source: "+src);}
     public static boolean delete(File f){if(f.isDirectory()){File[]a=f.listFiles();if(a!=null)for(File x:a)if(!delete(x))return false;}return f.delete();}
-    public static void zip(List<File> files,File out)throws IOException{try(ZipOutputStream z=new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(out)))){byte[]buf=new byte[64*1024];for(File f:files)zipOne(z,f,f.getName(),buf);}}
-    private static void zipOne(ZipOutputStream z,File f,String name,byte[]buf)throws IOException{if(f.isDirectory()){File[]a=f.listFiles();if(a!=null)for(File x:a)zipOne(z,x,name+"/"+x.getName(),buf);return;}z.putNextEntry(new ZipEntry(name));try(InputStream in=new BufferedInputStream(new FileInputStream(f))){int n;while((n=in.read(buf))!=-1)z.write(buf,0,n);}z.closeEntry();}
+    public static File unique(File dir,String name){File f=new File(dir,name);if(!f.exists())return f;int dot=name.lastIndexOf('.');String base=dot>0?name.substring(0,dot):name,ext=dot>0?name.substring(dot):"";for(int i=1;i<10000;i++){f=new File(dir,base+" ("+i+")"+ext);if(!f.exists())return f;}return new File(dir,System.currentTimeMillis()+"_"+name);}
+    public static void zip(List<File>files,File out)throws IOException{String outCanon=out.getCanonicalPath();try(ZipOutputStream z=new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(out)))){byte[]buf=new byte[64*1024];for(File f:files){if(f.getCanonicalPath().equals(outCanon))continue;zipOne(z,f,f.getName(),buf);}}}
+    private static void zipOne(ZipOutputStream z,File f,String name,byte[]buf)throws IOException{if(f.isDirectory()){File[]a=f.listFiles();if(a==null||a.length==0){ZipEntry e=new ZipEntry(name+"/");z.putNextEntry(e);z.closeEntry();}else for(File x:a)zipOne(z,x,name+"/"+x.getName(),buf);return;}z.putNextEntry(new ZipEntry(name));try(InputStream in=new BufferedInputStream(new FileInputStream(f))){int n;while((n=in.read(buf))!=-1)z.write(buf,0,n);}z.closeEntry();}
+    public static void unzip(File zip,File dest)throws IOException{String root=dest.getCanonicalPath()+File.separator;try(ZipInputStream in=new ZipInputStream(new BufferedInputStream(new FileInputStream(zip)))){ZipEntry e;byte[]b=new byte[64*1024];while((e=in.getNextEntry())!=null){File out=new File(dest,e.getName());String c=out.getCanonicalPath();if(!c.startsWith(root))throw new IOException("Unsafe archive path: "+e.getName());if(e.isDirectory()){out.mkdirs();}else{File p=out.getParentFile();if(p!=null)p.mkdirs();try(OutputStream o=new BufferedOutputStream(new FileOutputStream(out))){int n;while((n=in.read(b))!=-1)o.write(b,0,n);}}in.closeEntry();}}}
+    public static Summary analyze(File root,boolean hidden,Progress p){Summary s=new Summary();ArrayDeque<File>q=new ArrayDeque<>();q.add(root);while(!q.isEmpty()&&!p.cancelled()){File d=q.removeFirst();File[]a;try{a=d.listFiles();}catch(Exception e){continue;}if(a==null)continue;s.dirs++;if(a.length==0)s.emptyDirs++;for(File f:a){if(!hidden&&f.getName().startsWith("."))continue;if(f.isDirectory())q.add(f);else{s.files++;long z=f.length();s.bytes+=z;int c=category(f);s.categoryCount[c]++;s.categoryBytes[c]+=z;insertLargest(s.largest,f,50);if((s.files&127)==0)p.update("Analyzing… "+s.files,0,0);}}}return s;}
+    private static void insertLargest(ArrayList<File>a,File f,int max){int i=0;while(i<a.size()&&a.get(i).length()>=f.length())i++;a.add(i,f);if(a.size()>max)a.remove(a.size()-1);}
+    public static int category(File f){String n=lower(f);if(isImage(f))return 0;if(isVideo(f))return 1;if(isAudio(f))return 2;if(n.endsWith(".pdf")||n.endsWith(".doc")||n.endsWith(".docx")||n.endsWith(".xls")||n.endsWith(".xlsx")||n.endsWith(".ppt")||n.endsWith(".pptx")||isText(f))return 3;if(isApk(f))return 4;if(isArchive(f)||n.endsWith(".rar")||n.endsWith(".7z")||n.endsWith(".tar")||n.endsWith(".gz"))return 5;return 6;}
+
+    private static <K,V> List<V> bucket(Map<K,List<V>> map,K key){List<V> v=map.get(key);if(v==null){v=new ArrayList<V>();map.put(key,v);}return v;}
 }
