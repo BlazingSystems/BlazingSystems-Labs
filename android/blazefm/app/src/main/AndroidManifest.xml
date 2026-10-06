@@ -22,6 +22,7 @@
             android:exported="false"
             android:grantUriPermissions="true"/>
 
+        <activity android:name=".SearchActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".PreviewActivity" android:exported="false"/>
         <activity android:name=".AnalyzerActivity" android:exported="false"/>
         <activity android:name=".AppManagerActivity" android:exported="false"/>

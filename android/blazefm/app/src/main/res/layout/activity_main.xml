@@ -173,6 +173,37 @@
                             <com.google.android.material.chip.Chip android:id="@+id/category_apks" style="@style/Widget.Material3.Chip.Assist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="APKs" app:chipIcon="@drawable/ic_apps" app:chipIconVisible="true"/>
                         </com.google.android.material.chip.ChipGroup>
                     </HorizontalScrollView>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Quick access"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="@color/blaze_on_surface_variant"/>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="7dp"
+                        app:chipSpacingHorizontal="8dp">
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/quick_favorites"
+                            style="@style/Widget.Material3.Chip.Assist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Favorites"
+                            app:chipIcon="@drawable/ic_star"
+                            app:chipIconVisible="true"/>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/quick_recent"
+                            style="@style/Widget.Material3.Chip.Assist"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Recent"
+                            app:chipIcon="@drawable/ic_history"
+                            app:chipIconVisible="true"/>
+                    </com.google.android.material.chip.ChipGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -29,7 +29,7 @@ import java.util.*;
 public class MainActivity extends Activity {
     private View homePanel,emptyState,headerDetails,searchBar; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
-    private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9;
+    private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9,REQ_SEARCH=10;
 
     @Override public void onCreate(Bundle b){super.onCreate(b);buildUi();ensurePermission();cwd=Environment.getExternalStorageDirectory();showDir(cwd);}
     @Override public void onResume(){super.onResume();if(cwd!=null&&!showingResults)showDir(cwd);}
@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
             return false;
         });
 
-        searchBar.setOnClickListener(v->searchDialog());
+        searchBar.setOnClickListener(v->openSearch());
 
         selectionToolbar.setNavigationOnClickListener(v->clearSelection());
         selectionToolbar.setOnMenuItemClickListener(item->{
@@ -92,6 +92,8 @@ public class MainActivity extends Activity {
         findViewById(R.id.category_audio).setOnClickListener(v->categorySearch(2,"Audio"));
         findViewById(R.id.category_docs).setOnClickListener(v->categorySearch(3,"Documents"));
         findViewById(R.id.category_apks).setOnClickListener(v->categorySearch(4,"APKs"));
+        findViewById(R.id.quick_favorites).setOnClickListener(v->showPaths("Favorites",AppPrefs.favorites(this)));
+        findViewById(R.id.quick_recent).setOnClickListener(v->showPaths("Recent files",AppPrefs.recents(this)));
 
         bottomNav.setSelectedItemId(R.id.nav_files);
         bottomNav.setOnItemSelectedListener(item->{
@@ -103,6 +105,24 @@ public class MainActivity extends Activity {
             if(id==R.id.nav_apps){startActivity(new Intent(this,AppManagerActivity.class));return true;}
             return false;
         });
+    }
+
+    private void openSearch(){
+        Intent i=new Intent(this,SearchActivity.class);
+        i.putExtra(SearchActivity.EXTRA_BASE,cwd==null?Environment.getExternalStorageDirectory().getAbsolutePath():cwd.getAbsolutePath());
+        startActivityForResult(i,REQ_SEARCH);
+    }
+
+    @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
+        super.onActivityResult(requestCode,resultCode,data);
+        if(requestCode==REQ_SEARCH&&resultCode==RESULT_OK&&data!=null){
+            String target=data.getStringExtra(SearchActivity.EXTRA_TARGET);
+            if(target!=null){
+                File f=new File(target);
+                if(f.isDirectory())showDir(f);
+                else if(f.isFile())openFile(f);
+            }
+        }
     }
 
     private void updateHomePanel(){
@@ -388,7 +408,15 @@ public class MainActivity extends Activity {
 
     private boolean validName(String n){if(n.isEmpty()||n.equals(".")||n.equals("..")||n.contains("/")||n.contains("\\")||n.indexOf('\0')>=0){toast("Invalid file name");return false;}return true;}
 
-    private void showPaths(String t,Collection<String>paths){ArrayList<String>a=new ArrayList<>();for(String p:paths)if(new File(p).exists())a.add(p);if(a.isEmpty()){toast("No saved items");return;}new MaterialAlertDialogBuilder(this).setTitle(t).setItems(a.toArray(new String[0]),(d,w)->{File f=new File(a.get(w));if(f.isDirectory())showDir(f);else openFile(f);}).setPositiveButton("Close",null).show();}
+    private void showPaths(String t,Collection<String>paths){
+        ArrayList<File> files=new ArrayList<>();
+        for(String p:paths){
+            File f=new File(p);
+            if(f.exists())files.add(f);
+        }
+        if(files.isEmpty()){toast("No saved items");return;}
+        showResults(t,files);
+    }
     private void trashDialog(){List<TrashManager.Item>a=TrashManager.list(this);if(a.isEmpty()){toast("Trash is empty");return;}String[]rows=new String[a.size()];for(int i=0;i<rows.length;i++)rows[i]=a.get(i).stored.getName()+"\nfrom: "+a.get(i).original;new MaterialAlertDialogBuilder(this).setTitle("Trash · "+a.size()+" items").setItems(rows,(d,w)->trashItem(a.get(w))).setNeutralButton("Empty Trash",(d,w)->new MaterialAlertDialogBuilder(this).setTitle("Empty Trash permanently?").setPositiveButton("Empty",(x,y)->new Thread(()->{TrashManager.empty(this);runOnUiThread(()->toast("Trash emptied"));}).start()).setNegativeButton("Cancel",null).show()).setPositiveButton("Close",null).show();}
     private void trashItem(TrashManager.Item i){String[]o={"Restore","Delete permanently"};new MaterialAlertDialogBuilder(this).setTitle(i.stored.getName()).setMessage("Original: "+i.original).setItems(o,(d,w)->{if(w==0)new Thread(()->{try{File r=TrashManager.restore(this,i);runOnUiThread(()->toast("Restored: "+r.getAbsolutePath()));}catch(Exception e){runOnUiThread(()->toast("Restore failed: "+e.getMessage()));}}).start();else new Thread(()->{TrashManager.purge(this,i);runOnUiThread(()->toast("Deleted permanently"));}).start();}).show();}
 
@@ -397,7 +425,7 @@ public class MainActivity extends Activity {
     private void installApk(File f){if(Build.VERSION.SDK_INT>=26&&!getPackageManager().canRequestPackageInstalls()){try{startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName())));toast("Allow BlazeFM to install unknown apps, then retry the APK.");}catch(Exception e){toast("Enable 'Install unknown apps' for BlazeFM in Android settings.");}return;}Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),"application/vnd.android.package-archive");i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);try{startActivity(i);}catch(Exception e){toast("Installer unavailable: "+e.getMessage());}}
 
     private void storageInfo(){File e=Environment.getExternalStorageDirectory();long total=e.getTotalSpace(),free=e.getFreeSpace();new MaterialAlertDialogBuilder(this).setTitle("Storage").setMessage("Total: "+fmt(total)+"\nUsed: "+fmt(total-free)+"\nFree: "+fmt(free)+"\n\nCurrent folder:\n"+cwd.getAbsolutePath()).setPositiveButton("OK",null).show();}
-    private void about(){String m="BlazeFM 1.3.0\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new MaterialAlertDialogBuilder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
+    private void about(){String m="BlazeFM 1.3.2\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new MaterialAlertDialogBuilder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
 
     private void progress(String s){cancel=false;status.setText(s+" · tap status to cancel");status.setOnClickListener(v->{cancel=true;status.setText("Cancelling…");});}
     private void setProgress(String s){runOnUiThread(()->status.setText(s));}
