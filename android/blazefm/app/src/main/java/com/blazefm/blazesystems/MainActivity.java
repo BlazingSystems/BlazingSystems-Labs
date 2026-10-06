@@ -172,50 +172,71 @@ public class MainActivity extends Activity {
     private void openFile(File f){AppPrefs.addRecent(this,f);if(FileEngine.isImage(f)||FileEngine.isText(f)||FileEngine.isVideo(f)||FileEngine.isAudio(f)){Intent i=new Intent(this,PreviewActivity.class);i.putExtra("path",f.getAbsolutePath());startActivity(i);return;}Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),FileEngine.mime(f));i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{startActivity(i);}catch(Exception e){toast("No app can open this file");}}
 
     private void fileMenu(File f){
-        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
-        FrameLayout overlay=new FrameLayout(this);overlay.setBackgroundColor(0x99000000);overlay.setOnClickListener(v->d.dismiss());
-        LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(LinearLayout.VERTICAL);sheet.setPadding(Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,12));sheet.setBackground(Ui.rounded(this,Ui.SURFACE,22,Ui.BORDER,1));sheet.setElevation(Ui.dp(this,8));sheet.setOnClickListener(v->{});
+        ArrayList<ActionSheet.Item> items=new ArrayList<>();
+        items.add(ActionSheet.item(
+                f.isDirectory()?R.drawable.ic_folder:R.drawable.ic_open_in_new,
+                f.isDirectory()?"Open folder":"Preview / open",
+                f.isDirectory()?f.getAbsolutePath():FileEngine.mime(f)+" · "+fmt(f.length()),
+                ()->{if(f.isDirectory())showDir(f);else openFile(f);}
+        ));
+        items.add(ActionSheet.item(
+                R.drawable.ic_select,
+                selected.contains(AppPrefs.canon(f))?"Unselect":"Select",
+                "Use contextual multi-select actions",
+                ()->toggleSelect(f)
+        ));
+        items.add(ActionSheet.item(
+                R.drawable.ic_star,
+                AppPrefs.isFavorite(this,f)?"Remove favorite":"Add favorite",
+                "Keep this item in Favorites",
+                ()->{AppPrefs.toggleFavorite(this,f);toast(AppPrefs.isFavorite(this,f)?"Added to favorites":"Removed from favorites");}
+        ));
+        items.add(ActionSheet.item(R.drawable.ic_copy,"Copy","Copy to another folder",()->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(false);}));
+        items.add(ActionSheet.item(R.drawable.ic_move,"Move","Move to another folder",()->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(true);}));
+        items.add(ActionSheet.item(R.drawable.ic_edit,"Rename","Change the file or folder name",()->rename(f)));
+        if(f.isFile())items.add(ActionSheet.item(R.drawable.ic_info,"Properties / SHA-256","Size, modified date, MIME and hash",()->hashDialog(f)));
+        if(FileEngine.isArchive(f))items.add(ActionSheet.item(R.drawable.ic_archive,"Extract ZIP here","Safely extract this archive",()->extract(f)));
+        if(FileEngine.isApk(f))items.add(ActionSheet.item(R.drawable.ic_apps,"APK info / Install","Inspect package metadata or open installer",()->apkInfo(f)));
+        items.add(ActionSheet.item(R.drawable.ic_delete,"Move to Trash","Can be restored later",()->trashOne(f)));
+        items.add(ActionSheet.danger(R.drawable.ic_delete,"Delete permanently","Cannot be restored from BlazeFM Trash",()->permanentDelete(f)));
 
-        LinearLayout head=new LinearLayout(this);head.setOrientation(LinearLayout.HORIZONTAL);head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView badge=Ui.text(this,f.isDirectory()?"▰":FileEngine.isImage(f)?"◩":FileEngine.isVideo(f)?"▶":FileEngine.isAudio(f)?"♪":FileEngine.isApk(f)?"A":FileEngine.isArchive(f)?"Z":"•",18);badge.setGravity(Gravity.CENTER);badge.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);badge.setTextColor(Ui.ORANGE);badge.setPadding(0,0,0,0);badge.setBackground(Ui.rounded(this,Ui.ACCENT_SOFT,14,Color.TRANSPARENT,0));head.addView(badge,new LinearLayout.LayoutParams(Ui.dp(this,46),Ui.dp(this,46)));
-        LinearLayout labels=new LinearLayout(this);labels.setOrientation(LinearLayout.VERTICAL);labels.setPadding(Ui.dp(this,12),0,Ui.dp(this,8),0);
-        TextView name=Ui.text(this,f.getName(),16);name.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);name.setPadding(0,0,0,0);labels.addView(name);
-        TextView meta=Ui.text(this,f.isDirectory()?f.getAbsolutePath():fmt(f.length())+"  ·  "+FileEngine.mime(f),11);meta.setTextColor(Ui.MUTED);meta.setSingleLine(true);meta.setEllipsize(android.text.TextUtils.TruncateAt.START);meta.setPadding(0,Ui.dp(this,3),0,0);labels.addView(meta);
-        head.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
-        Button close=Ui.button(this,"×");close.setTextSize(20);close.setOnClickListener(v->d.dismiss());head.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,42),Ui.dp(this,42)));sheet.addView(head);
-
-        TextView hint=Ui.text(this,"FILE ACTIONS",10);hint.setTextColor(Ui.MUTED);hint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);hint.setPadding(Ui.dp(this,2),Ui.dp(this,13),Ui.dp(this,2),Ui.dp(this,6));sheet.addView(hint);
-
-        ScrollView scroll=new ScrollView(this);LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.VERTICAL);
-        addFileAction(actions,d,f.isDirectory()?"›":"↗",f.isDirectory()?"Open folder":"Preview / open",false,v->{if(f.isDirectory())showDir(f);else openFile(f);});
-        addFileAction(actions,d,"✓",selected.contains(AppPrefs.canon(f))?"Unselect":"Select",false,v->toggleSelect(f));
-        addFileAction(actions,d,"★",AppPrefs.isFavorite(this,f)?"Remove favorite":"Add favorite",false,v->{AppPrefs.toggleFavorite(this,f);toast(AppPrefs.isFavorite(this,f)?"Added to favorites":"Removed from favorites");});
-        addFileAction(actions,d,"C","Copy",false,v->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(false);});
-        addFileAction(actions,d,"M","Move",false,v->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(true);});
-        addFileAction(actions,d,"R","Rename",false,v->rename(f));
-        if(f.isFile())addFileAction(actions,d,"i","Properties / SHA-256",false,v->hashDialog(f));
-        if(FileEngine.isArchive(f))addFileAction(actions,d,"Z","Extract ZIP here",false,v->extract(f));
-        if(FileEngine.isApk(f))addFileAction(actions,d,"A","APK info / Install",false,v->apkInfo(f));
-        addFileAction(actions,d,"T","Move to Trash",false,v->trashOne(f));
-        addFileAction(actions,d,"!","Delete permanently",true,v->permanentDelete(f));
-        scroll.addView(actions);sheet.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
-
-        int h=(int)(getResources().getDisplayMetrics().heightPixels*0.80f);
-        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,h,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);d.show();
-    }
-
-    private void addFileAction(LinearLayout box,Dialog dialog,String icon,String label,boolean danger,View.OnClickListener action){
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(this,10),Ui.dp(this,8),Ui.dp(this,10),Ui.dp(this,8));row.setBackground(Ui.rounded(this,danger?0xFFFFF0EE:Ui.SURFACE,14,danger?0xFFFFC9C2:Ui.BORDER,1));
-        TextView b=Ui.text(this,icon,14);b.setGravity(Gravity.CENTER);b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);b.setTextColor(danger?Ui.DANGER:Ui.ORANGE);b.setPadding(0,0,0,0);b.setBackground(Ui.rounded(this,danger?0xFFFFE0DC:Ui.ACCENT_SOFT,12,Color.TRANSPARENT,0));row.addView(b,new LinearLayout.LayoutParams(Ui.dp(this,38),Ui.dp(this,38)));
-        TextView t=Ui.text(this,label,13);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setTextColor(danger?Ui.DANGER:Ui.TEXT);t.setPadding(Ui.dp(this,12),0,0,0);row.addView(t,new LinearLayout.LayoutParams(0,Ui.dp(this,42),1));
-        row.setOnClickListener(v->{dialog.dismiss();action.onClick(v);});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,6));box.addView(row,lp);
+        ActionSheet.show(
+                this,
+                f.getName(),
+                f.isDirectory()?f.getAbsolutePath():fmt(f.length())+" · "+FileEngine.mime(f),
+                items
+        );
     }
 
     private void createMenu(){
-        final Sheet sheet=bottomSheet("Create here","Choose what to add in "+(cwd==null?"this folder":cwd.getName()));final Dialog d=sheet.dialog;LinearLayout body=sheet.body;
-        addSheetAction(body,d,"▰","New folder","Create an empty folder",false,v->inputSheet("New folder","Folder name","", "Create",n->{if(!validName(n))return;try{File f=new File(cwd,n);if(!f.mkdir())toast("Folder already exists or could not be created");showDir(cwd);}catch(Exception e){toast("Create failed: "+e.getMessage());}}));
-        addSheetAction(body,d,"T","New text file","Create an empty text document",false,v->inputSheet("New text file","File name.txt","", "Create",n->{if(!validName(n))return;try{File f=new File(cwd,n);if(!f.createNewFile())toast("File already exists or could not be created");showDir(cwd);}catch(Exception e){toast("Create failed: "+e.getMessage());}}));
-        d.show();
+        ArrayList<ActionSheet.Item> items=new ArrayList<>();
+        items.add(ActionSheet.item(
+                R.drawable.ic_create_folder,
+                "New folder",
+                "Create an empty folder in "+(cwd==null?"this location":cwd.getName()),
+                ()->inputSheet("New folder","Folder name","", "Create",n->{
+                    if(!validName(n))return;
+                    try{
+                        File f=new File(cwd,n);
+                        if(!f.mkdir())toast("Folder already exists or could not be created");
+                        showDir(cwd);
+                    }catch(Exception e){toast("Create failed: "+e.getMessage());}
+                })
+        ));
+        items.add(ActionSheet.item(
+                R.drawable.ic_description,
+                "New text file",
+                "Create an empty text document",
+                ()->inputSheet("New text file","File name.txt","", "Create",n->{
+                    if(!validName(n))return;
+                    try{
+                        File f=new File(cwd,n);
+                        if(!f.createNewFile())toast("File already exists or could not be created");
+                        showDir(cwd);
+                    }catch(Exception e){toast("Create failed: "+e.getMessage());}
+                })
+        ));
+        ActionSheet.show(this,"Create here",cwd==null?"Current folder":cwd.getAbsolutePath(),items);
     }
 
     private void rename(File f){inputSheet("Rename","New name",f.getName(),"Rename",n->{if(!validName(n))return;File to=new File(f.getParentFile(),n);if(f.renameTo(to))showDir(cwd);else toast("Rename failed or destination already exists");});}
@@ -241,59 +262,54 @@ public class MainActivity extends Activity {
     private void photoResults(FileEngine.SimilarResult r){List<FileEngine.SimilarPair>p=r.pairs;StringBuilder b=new StringBuilder();int max=Math.min(p.size(),300);for(int i=0;i<max;i++){FileEngine.SimilarPair x=p.get(i);b.append("distance ").append(x.distance).append("\n").append(x.a.getAbsolutePath()).append("\n↔ ").append(x.b.getAbsolutePath()).append("\n\n");}if(r.totalPairs==0)b.append("No visually similar photo pairs found.");if(p.size()>max)b.append("… ").append(p.size()-max).append(" retained pairs not shown\n");if(r.truncated)b.append("\nLow-memory mode retained the best ").append(p.size()).append(" of ").append(r.totalPairs).append(" matching pairs.");new MaterialAlertDialogBuilder(this).setTitle("Similar photos · "+r.totalPairs+" pairs").setMessage(b.toString()).setPositiveButton("Close",null).show();status.setText("Photo scan complete");}
 
     private void tools(){
-        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
-        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Ui.BG);
-
-        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,12));top.setBackgroundColor(Ui.HEADER);
-        LinearLayout names=new LinearLayout(this);names.setOrientation(LinearLayout.VERTICAL);
-        TextView title=Ui.text(this,"Tools & utilities",20);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setTextColor(Color.WHITE);title.setPadding(0,0,0,0);names.addView(title);
-        TextView sub=Ui.text(this,"Cleanup, locations, connections and system tools",11);sub.setTextColor(Ui.HEADER_MUTED);sub.setPadding(0,Ui.dp(this,3),0,0);names.addView(sub);
-        top.addView(names,new LinearLayout.LayoutParams(0,-2,1));
-        Button close=Ui.iconButton(this,"×");close.setContentDescription("Close tools");close.setOnClickListener(v->d.dismiss());top.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,44)));
-        root.addView(top);
-
-        ScrollView scroll=new ScrollView(this);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,12),Ui.dp(this,18));
-
-        toolGroup(body,"CLEAN UP");
-        addTool(body,d,"D","Exact duplicates","SHA-256 verified duplicate cleanup",v->scanDupes());
-        addTool(body,d,"P","Similar photos","Perceptual photo matching with low-memory limits",v->scanPhotos());
-        addTool(body,d,"A","Storage analyzer","Category totals, empty folders and largest files",v->{Intent a=new Intent(this,AnalyzerActivity.class);a.putExtra("path",cwd.getAbsolutePath());startActivity(a);});
-
-        toolGroup(body,"PLACES");
-        addTool(body,d,"★","Favorites","Open folders and files you pinned",v->showPaths("Favorites",AppPrefs.favorites(this)));
-        addTool(body,d,"↺","Recent files","Jump back to recently opened files",v->showPaths("Recent files",AppPrefs.recents(this)));
-        addTool(body,d,"T","Trash","Restore or permanently purge deleted items",v->trashDialog());
-
-        toolGroup(body,"BROWSER");
-        String hidden=AppPrefs.showHidden(this)?"Hide hidden files":"Show hidden files";
-        addTool(body,d,".","Hidden files",hidden,v->{AppPrefs.setShowHidden(this,!AppPrefs.showHidden(this));showDir(cwd);});
-        addTool(body,d,"↻","Refresh","Reload the current folder",v->showDir(cwd));
-        addTool(body,d,"S","Storage info","Device capacity and current location",v->storageInfo());
-
-        toolGroup(body,"CONNECTIONS & SYSTEM");
-        addTool(body,d,"A","App manager","Launch, inspect, back up or uninstall apps",v->startActivity(new Intent(this,AppManagerActivity.class)));
-        addTool(body,d,"N","Network","SMB, FTP and SFTP connections",v->startActivity(new Intent(this,RemoteActivity.class)));
-        addTool(body,d,"☁","Cloud","Android document and cloud providers",v->startActivity(new Intent(this,CloudActivity.class)));
-        addTool(body,d,"#","Root browser","Open privileged filesystem access when available",v->startActivity(new Intent(this,RootActivity.class)));
-        addTool(body,d,"i","About BlazeFM","Version, platform support and feature summary",v->about());
-
-        scroll.addView(body);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));d.setContentView(root);d.show();
+        ArrayList<ActionSheet.Item> items=new ArrayList<>();
+        items.add(ActionSheet.item(R.drawable.ic_copy,"Exact duplicates","SHA-256 verified duplicate cleanup",this::scanDupes));
+        items.add(ActionSheet.item(R.drawable.ic_image,"Similar photos","Perceptual photo matching with low-memory limits",this::scanPhotos));
+        items.add(ActionSheet.item(R.drawable.ic_analytics,"Storage analyzer","Category totals, empty folders and largest files",()->{
+            Intent a=new Intent(this,AnalyzerActivity.class);
+            a.putExtra("path",cwd.getAbsolutePath());
+            startActivity(a);
+        }));
+        items.add(ActionSheet.item(R.drawable.ic_star,"Favorites","Open folders and files you pinned",()->showPaths("Favorites",AppPrefs.favorites(this))));
+        items.add(ActionSheet.item(R.drawable.ic_history,"Recent files","Jump back to recently opened files",()->showPaths("Recent files",AppPrefs.recents(this))));
+        items.add(ActionSheet.item(R.drawable.ic_delete,"Trash","Restore or permanently purge deleted items",this::trashDialog));
+        items.add(ActionSheet.item(R.drawable.ic_visibility_off,"Hidden files",AppPrefs.showHidden(this)?"Currently shown · tap to hide":"Currently hidden · tap to show",()->{
+            AppPrefs.setShowHidden(this,!AppPrefs.showHidden(this));
+            showDir(cwd);
+        }));
+        items.add(ActionSheet.item(R.drawable.ic_refresh,"Refresh","Reload the current folder",()->showDir(cwd)));
+        items.add(ActionSheet.item(R.drawable.ic_storage,"Storage info","Device capacity and current location",this::storageInfo));
+        items.add(ActionSheet.item(R.drawable.ic_apps,"App manager","Launch, inspect, back up or uninstall apps",()->startActivity(new Intent(this,AppManagerActivity.class))));
+        items.add(ActionSheet.item(R.drawable.ic_network,"Network","SMB, FTP and SFTP connections",()->startActivity(new Intent(this,RemoteActivity.class))));
+        items.add(ActionSheet.item(R.drawable.ic_cloud,"Cloud","Android document and cloud providers",()->startActivity(new Intent(this,CloudActivity.class))));
+        items.add(ActionSheet.item(R.drawable.ic_root,"Root browser","Privileged filesystem access when available",()->startActivity(new Intent(this,RootActivity.class))));
+        items.add(ActionSheet.item(R.drawable.ic_info,"About BlazeFM","Version, platform support and feature summary",this::about));
+        ActionSheet.show(this,"Tools & utilities","Cleanup, locations, connections and system tools",items);
     }
 
     private void toggleView(){AppPrefs.setGridView(this,!AppPrefs.gridView(this));render();}
 
     private void sortSheet(){
-        final Sheet sheet=bottomSheet("Sort files","Folders stay first; choose how items are ordered");final Dialog d=sheet.dialog;LinearLayout body=sheet.body;
         String current=AppPrefs.sortMode(this);
-        addSortChoice(body,d,"A","Name","A to Z","name",current);
-        addSortChoice(body,d,"↺","Date","Newest first","date",current);
-        addSortChoice(body,d,"S","Size","Largest first","size",current);
-        addSortChoice(body,d,"T","Type","File type then name","type",current);
-        d.show();
+        ArrayList<ActionSheet.Item> items=new ArrayList<>();
+        items.add(sortItem("name","Name","A to Z",current));
+        items.add(sortItem("date","Date","Newest first",current));
+        items.add(sortItem("size","Size","Largest first",current));
+        items.add(sortItem("type","Type","File type then name",current));
+        ActionSheet.show(this,"Sort files","Folders stay first",items);
     }
 
-    private void addSortChoice(LinearLayout body,Dialog d,String icon,String name,String desc,String mode,String current){
-        addSheetAction(body,d,icon,name+(mode.equals(current)?"  ✓":""),desc,false,v->{AppPrefs.setSortMode(this,mode);if(showingResults){sortFiles(shown);render();status.setText(shown.size()+" results · "+sortLabel());}else showDir(cwd);});
+    private ActionSheet.Item sortItem(String mode,String name,String desc,String current){
+        int icon=mode.equals(current)?R.drawable.ic_check:R.drawable.ic_sort;
+        String subtitle=mode.equals(current)?desc+" · Selected":desc;
+        return ActionSheet.item(icon,name,subtitle,()->{
+            AppPrefs.setSortMode(this,mode);
+            if(showingResults){
+                sortFiles(shown);
+                render();
+                status.setText(shown.size()+" results · "+sortLabel());
+            }else showDir(cwd);
+        });
     }
 
     private String sortLabel(){String m=AppPrefs.sortMode(this);return "date".equals(m)?"Date ↓":"size".equals(m)?"Size ↓":"type".equals(m)?"Type":"Name A–Z";}
@@ -314,51 +330,12 @@ public class MainActivity extends Activity {
     private interface TextAction{void run(String value);}
 
     private void inputSheet(String titleText,String hint,String initial,String actionLabel,TextAction action){
-        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);FrameLayout overlay=new FrameLayout(this);overlay.setBackgroundColor(0x99000000);overlay.setOnClickListener(v->d.dismiss());
-        LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(LinearLayout.VERTICAL);sheet.setPadding(Ui.dp(this,16),Ui.dp(this,16),Ui.dp(this,16),Ui.dp(this,14));sheet.setBackground(Ui.rounded(this,Ui.SURFACE,22,Ui.BORDER,1));sheet.setOnClickListener(v->{});
-        TextView title=Ui.text(this,titleText,18);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setPadding(0,0,0,Ui.dp(this,10));sheet.addView(title);
-        EditText e=new EditText(this);e.setSingleLine(true);e.setHint(hint);e.setText(initial);e.setTextColor(Ui.TEXT);e.setHintTextColor(Ui.MUTED);e.setSelectAllOnFocus(true);e.setBackground(Ui.rounded(this,Ui.SURFACE_2,14,Ui.BORDER,1));e.setPadding(Ui.dp(this,14),0,Ui.dp(this,14),0);sheet.addView(e,new LinearLayout.LayoutParams(-1,Ui.dp(this,52)));
-        LinearLayout actions=Ui.toolbar(this);Button cancel=Ui.button(this,"Cancel"),ok=Ui.primaryButton(this,actionLabel);cancel.setOnClickListener(v->d.dismiss());ok.setOnClickListener(v->{String value=e.getText().toString().trim();if(value.isEmpty()){e.setError("Required");return;}d.dismiss();action.run(value);});Ui.equalAdd(actions,cancel);Ui.equalAdd(actions,ok);sheet.addView(actions);
-        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);d.setOnShowListener(x->{e.requestFocus();d.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);});d.show();
+        MaterialPrompts.text(this,titleText,hint,initial,actionLabel,action::run);
     }
 
     private boolean validName(String n){if(n.isEmpty()||n.equals(".")||n.equals("..")||n.contains("/")||n.contains("\\")||n.indexOf('\0')>=0){toast("Invalid file name");return false;}return true;}
 
-    private static final class Sheet{final Dialog dialog;final LinearLayout body;Sheet(Dialog d,LinearLayout b){dialog=d;body=b;}}
-
-    private Sheet bottomSheet(String titleText,String subtitle){
-        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);FrameLayout overlay=new FrameLayout(this);overlay.setBackgroundColor(0x99000000);overlay.setOnClickListener(v->d.dismiss());
-        LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(LinearLayout.VERTICAL);sheet.setPadding(Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,12));sheet.setBackground(Ui.rounded(this,Ui.SURFACE,22,Ui.BORDER,1));sheet.setOnClickListener(v->{});
-        LinearLayout head=new LinearLayout(this);head.setOrientation(LinearLayout.HORIZONTAL);head.setGravity(Gravity.CENTER_VERTICAL);LinearLayout labels=new LinearLayout(this);labels.setOrientation(LinearLayout.VERTICAL);
-        TextView title=Ui.text(this,titleText,18);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setPadding(0,0,0,0);labels.addView(title);TextView sub=Ui.text(this,subtitle,11);sub.setTextColor(Ui.MUTED);sub.setPadding(0,Ui.dp(this,3),0,0);labels.addView(sub);head.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
-        Button close=Ui.button(this,"×");close.setTextSize(20);close.setOnClickListener(v->d.dismiss());head.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,42),Ui.dp(this,42)));sheet.addView(head);
-        LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,Ui.dp(this,12),0,0);sheet.addView(body);
-        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);return new Sheet(d,body);
-    }
-
-    private void addSheetAction(LinearLayout box,Dialog dialog,String icon,String label,String desc,boolean danger,View.OnClickListener action){
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(this,10),Ui.dp(this,8),Ui.dp(this,10),Ui.dp(this,8));row.setBackground(Ui.rounded(this,danger?0xFFFFF0EE:Ui.SURFACE,14,danger?0xFFFFC9C2:Ui.BORDER,1));
-        TextView b=Ui.text(this,icon,14);b.setGravity(Gravity.CENTER);b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);b.setTextColor(danger?Ui.DANGER:Ui.ORANGE);b.setPadding(0,0,0,0);b.setBackground(Ui.rounded(this,danger?0xFFFFE0DC:Ui.ACCENT_SOFT,12,Color.TRANSPARENT,0));row.addView(b,new LinearLayout.LayoutParams(Ui.dp(this,40),Ui.dp(this,40)));
-        LinearLayout text=new LinearLayout(this);text.setOrientation(LinearLayout.VERTICAL);text.setPadding(Ui.dp(this,12),0,0,0);TextView n=Ui.text(this,label,13);n.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);n.setTextColor(danger?Ui.DANGER:Ui.TEXT);n.setPadding(0,0,0,0);text.addView(n);TextView s=Ui.text(this,desc,11);s.setTextColor(Ui.MUTED);s.setPadding(0,Ui.dp(this,2),0,0);text.addView(s);row.addView(text,new LinearLayout.LayoutParams(0,-2,1));
-        row.setOnClickListener(v->{dialog.dismiss();action.onClick(v);});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,7));box.addView(row,lp);
-    }
-
-    private void toolGroup(LinearLayout box,String label){
-        TextView t=Ui.text(this,label,10);t.setTextColor(Ui.MUTED);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setPadding(Ui.dp(this,4),Ui.dp(this,13),Ui.dp(this,4),Ui.dp(this,6));box.addView(t);
-    }
-
-    private void addTool(LinearLayout box,Dialog dialog,String badge,String name,String desc,View.OnClickListener action){
-        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10));row.setBackground(Ui.rounded(this,Ui.SURFACE,16,Ui.BORDER,1));row.setElevation(Ui.dp(this,1));row.setClickable(true);
-        TextView icon=Ui.text(this,badge,16);icon.setGravity(Gravity.CENTER);icon.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);icon.setTextColor(Ui.ORANGE);icon.setPadding(0,0,0,0);icon.setBackground(Ui.rounded(this,Ui.ACCENT_SOFT,14,Color.TRANSPARENT,0));row.addView(icon,new LinearLayout.LayoutParams(Ui.dp(this,44),Ui.dp(this,44)));
-        LinearLayout text=new LinearLayout(this);text.setOrientation(LinearLayout.VERTICAL);text.setPadding(Ui.dp(this,12),0,Ui.dp(this,8),0);
-        TextView n=Ui.text(this,name,14);n.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);n.setPadding(0,0,0,0);text.addView(n);
-        TextView s=Ui.text(this,desc,11);s.setTextColor(Ui.MUTED);s.setPadding(0,Ui.dp(this,3),0,0);text.addView(s);
-        row.addView(text,new LinearLayout.LayoutParams(0,-2,1));
-        TextView arrow=Ui.text(this,"›",22);arrow.setTextColor(Ui.MUTED);arrow.setGravity(Gravity.CENTER);arrow.setPadding(0,0,0,0);row.addView(arrow,new LinearLayout.LayoutParams(Ui.dp(this,28),Ui.dp(this,44)));
-        row.setOnClickListener(v->{dialog.dismiss();action.onClick(v);});
-        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,7));box.addView(row,lp);
-    }
-    private void showPaths(String t,Collection<String>paths){ArrayList<String>a=new ArrayList<>();for(String p:paths)if(new File(p).exists())a.add(p);if(a.isEmpty()){toast("No saved items");return;}new MaterialAlertDialogBuilder(this).setTitle(t).setItems(a.toArray(new String[0]),(d,w)->{File f=new File(a.get(w));if(f.isDirectory())showDir(f);else openFile(f);}).setPositiveButton("Close",null).show();}
+    private void showPaths(    private void showPaths(String t,Collection<String>paths){ArrayList<String>a=new ArrayList<>();for(String p:paths)if(new File(p).exists())a.add(p);if(a.isEmpty()){toast("No saved items");return;}new MaterialAlertDialogBuilder(this).setTitle(t).setItems(a.toArray(new String[0]),(d,w)->{File f=new File(a.get(w));if(f.isDirectory())showDir(f);else openFile(f);}).setPositiveButton("Close",null).show();}
     private void trashDialog(){List<TrashManager.Item>a=TrashManager.list(this);if(a.isEmpty()){toast("Trash is empty");return;}String[]rows=new String[a.size()];for(int i=0;i<rows.length;i++)rows[i]=a.get(i).stored.getName()+"\nfrom: "+a.get(i).original;new MaterialAlertDialogBuilder(this).setTitle("Trash · "+a.size()+" items").setItems(rows,(d,w)->trashItem(a.get(w))).setNeutralButton("Empty Trash",(d,w)->new MaterialAlertDialogBuilder(this).setTitle("Empty Trash permanently?").setPositiveButton("Empty",(x,y)->new Thread(()->{TrashManager.empty(this);runOnUiThread(()->toast("Trash emptied"));}).start()).setNegativeButton("Cancel",null).show()).setPositiveButton("Close",null).show();}
     private void trashItem(TrashManager.Item i){String[]o={"Restore","Delete permanently"};new MaterialAlertDialogBuilder(this).setTitle(i.stored.getName()).setMessage("Original: "+i.original).setItems(o,(d,w)->{if(w==0)new Thread(()->{try{File r=TrashManager.restore(this,i);runOnUiThread(()->toast("Restored: "+r.getAbsolutePath()));}catch(Exception e){runOnUiThread(()->toast("Restore failed: "+e.getMessage()));}}).start();else new Thread(()->{TrashManager.purge(this,i);runOnUiThread(()->toast("Deleted permanently"));}).start();}).show();}
 
