@@ -12,6 +12,10 @@ final class AppPrefs {
     static SharedPreferences p(Context c){return c.getSharedPreferences(P,Context.MODE_PRIVATE);}
     static boolean showHidden(Context c){return p(c).getBoolean("show_hidden",false);}
     static void setShowHidden(Context c,boolean b){p(c).edit().putBoolean("show_hidden",b).apply();}
+    static boolean gridView(Context c){return p(c).getBoolean("grid_view",false);}
+    static void setGridView(Context c,boolean b){p(c).edit().putBoolean("grid_view",b).apply();}
+    static String sortMode(Context c){return p(c).getString("sort_mode","name");}
+    static void setSortMode(Context c,String mode){p(c).edit().putString("sort_mode",mode).apply();}
     static LinkedHashSet<String> favorites(Context c){return decode(p(c).getString("favorites",""));}
     static boolean isFavorite(Context c,File f){return favorites(c).contains(canon(f));}
     static void toggleFavorite(Context c,File f){LinkedHashSet<String>s=favorites(c);String k=canon(f);if(!s.remove(k))s.add(k);save(c,"favorites",s,100);}
