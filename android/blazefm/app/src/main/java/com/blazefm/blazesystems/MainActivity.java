@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private LinearLayout root,selectionBar,homePanel; private ListView list; private TextView path,status,title,folderTitle,storageText; private ProgressBar storageBar;
+    private LinearLayout root,selectionBar,homePanel,emptyState; private FrameLayout contentFrame; private ListView list; private TextView path,status,title,folderTitle,storageText; private ProgressBar storageBar;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
     private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9;
 
@@ -46,7 +46,14 @@ public class MainActivity extends Activity {
 
         buildHomePanel();
 
-        list=new ListView(this);list.setDivider(null);list.setDividerHeight(0);list.setClipToPadding(false);list.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,10));list.setBackgroundColor(Ui.BG);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
+        contentFrame=new FrameLayout(this);contentFrame.setBackgroundColor(Ui.BG);
+        list=new ListView(this);list.setDivider(null);list.setDividerHeight(0);list.setClipToPadding(false);list.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,10));list.setBackgroundColor(Ui.BG);contentFrame.addView(list,new FrameLayout.LayoutParams(-1,-1));
+        emptyState=new LinearLayout(this);emptyState.setOrientation(LinearLayout.VERTICAL);emptyState.setGravity(Gravity.CENTER);emptyState.setPadding(Ui.dp(this,32),Ui.dp(this,24),Ui.dp(this,32),Ui.dp(this,24));
+        TextView emptyIcon=Ui.text(this,"□",42);emptyIcon.setGravity(Gravity.CENTER);emptyIcon.setTextColor(Ui.ORANGE);emptyIcon.setPadding(0,0,0,Ui.dp(this,8));emptyState.addView(emptyIcon);
+        TextView emptyTitle=Ui.text(this,"This folder is empty",16);emptyTitle.setGravity(Gravity.CENTER);emptyTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);emptyTitle.setPadding(0,0,0,Ui.dp(this,4));emptyState.addView(emptyTitle);
+        TextView emptyText=Ui.text(this,"Create a folder or file here, or paste something from the clipboard.",11);emptyText.setGravity(Gravity.CENTER);emptyText.setTextColor(Ui.MUTED);emptyText.setPadding(0,0,0,Ui.dp(this,14));emptyState.addView(emptyText);
+        Button emptyNew=Ui.primaryButton(this,"＋  Create here");emptyNew.setOnClickListener(v->createMenu());emptyState.addView(emptyNew,new LinearLayout.LayoutParams(Ui.dp(this,150),Ui.dp(this,42)));
+        contentFrame.addView(emptyState,new FrameLayout.LayoutParams(-1,-1));list.setEmptyView(emptyState);root.addView(contentFrame,new LinearLayout.LayoutParams(-1,0,1));
 
         selectionBar=Ui.toolbar(this);selectionBar.setVisibility(View.GONE);String[]ss={"Copy","Move","Zip","Trash","Clear"};for(String s:ss){Button b=Ui.button(this,s);Ui.equalAdd(selectionBar,b);if(s.equals("Copy"))b.setOnClickListener(v->prepareClipboard(false));if(s.equals("Move"))b.setOnClickListener(v->prepareClipboard(true));if(s.equals("Zip"))b.setOnClickListener(v->zipSelection());if(s.equals("Trash"))b.setOnClickListener(v->trashSelection());if(s.equals("Clear"))b.setOnClickListener(v->clearSelection());}root.addView(selectionBar);
 
@@ -96,7 +103,45 @@ public class MainActivity extends Activity {
 
     private void openFile(File f){AppPrefs.addRecent(this,f);if(FileEngine.isImage(f)||FileEngine.isText(f)||FileEngine.isVideo(f)||FileEngine.isAudio(f)){Intent i=new Intent(this,PreviewActivity.class);i.putExtra("path",f.getAbsolutePath());startActivity(i);return;}Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),FileEngine.mime(f));i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);try{startActivity(i);}catch(Exception e){toast("No app can open this file");}}
 
-    private void fileMenu(File f){ArrayList<String>o=new ArrayList<>();o.add(f.isDirectory()?"Open":"Preview / Open");o.add(selected.contains(AppPrefs.canon(f))?"Unselect":"Select");o.add(AppPrefs.isFavorite(this,f)?"Remove favorite":"Add favorite");o.add("Copy");o.add("Move");o.add("Rename");if(f.isFile())o.add("Properties / SHA-256");if(FileEngine.isArchive(f))o.add("Extract ZIP here");if(FileEngine.isApk(f))o.add("APK info / Install");o.add("Move to Trash");o.add("Delete permanently");new AlertDialog.Builder(this).setTitle(f.getName()).setItems(o.toArray(new String[0]),(d,w)->{String s=o.get(w);if(s.startsWith("Open")||s.startsWith("Preview")){if(f.isDirectory())showDir(f);else openFile(f);}else if(s.endsWith("Select")||s.equals("Unselect"))toggleSelect(f);else if(s.contains("favorite")){AppPrefs.toggleFavorite(this,f);toast(AppPrefs.isFavorite(this,f)?"Added to favorites":"Removed from favorites");}else if(s.equals("Copy")){selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(false);}else if(s.equals("Move")){selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(true);}else if(s.equals("Rename"))rename(f);else if(s.startsWith("Properties"))hashDialog(f);else if(s.startsWith("Extract"))extract(f);else if(s.startsWith("APK"))apkInfo(f);else if(s.equals("Move to Trash"))trashOne(f);else if(s.startsWith("Delete permanently"))permanentDelete(f);}).show();}
+    private void fileMenu(File f){
+        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
+        FrameLayout overlay=new FrameLayout(this);overlay.setBackgroundColor(0x99000000);overlay.setOnClickListener(v->d.dismiss());
+        LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(LinearLayout.VERTICAL);sheet.setPadding(Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,12));sheet.setBackground(Ui.rounded(this,Ui.SURFACE,22,Ui.BORDER,1));sheet.setElevation(Ui.dp(this,8));sheet.setOnClickListener(v->{});
+
+        LinearLayout head=new LinearLayout(this);head.setOrientation(LinearLayout.HORIZONTAL);head.setGravity(Gravity.CENTER_VERTICAL);
+        TextView badge=Ui.text(this,f.isDirectory()?"▰":FileEngine.isImage(f)?"◩":FileEngine.isVideo(f)?"▶":FileEngine.isAudio(f)?"♪":FileEngine.isApk(f)?"A":FileEngine.isArchive(f)?"Z":"•",18);badge.setGravity(Gravity.CENTER);badge.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);badge.setTextColor(Ui.ORANGE);badge.setPadding(0,0,0,0);badge.setBackground(Ui.rounded(this,Ui.ACCENT_SOFT,14,Color.TRANSPARENT,0));head.addView(badge,new LinearLayout.LayoutParams(Ui.dp(this,46),Ui.dp(this,46)));
+        LinearLayout labels=new LinearLayout(this);labels.setOrientation(LinearLayout.VERTICAL);labels.setPadding(Ui.dp(this,12),0,Ui.dp(this,8),0);
+        TextView name=Ui.text(this,f.getName(),16);name.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);name.setPadding(0,0,0,0);labels.addView(name);
+        TextView meta=Ui.text(this,f.isDirectory()?f.getAbsolutePath():fmt(f.length())+"  ·  "+FileEngine.mime(f),11);meta.setTextColor(Ui.MUTED);meta.setSingleLine(true);meta.setEllipsize(android.text.TextUtils.TruncateAt.START);meta.setPadding(0,Ui.dp(this,3),0,0);labels.addView(meta);
+        head.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
+        Button close=Ui.button(this,"×");close.setTextSize(20);close.setOnClickListener(v->d.dismiss());head.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,42),Ui.dp(this,42)));sheet.addView(head);
+
+        TextView hint=Ui.text(this,"FILE ACTIONS",10);hint.setTextColor(Ui.MUTED);hint.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);hint.setPadding(Ui.dp(this,2),Ui.dp(this,13),Ui.dp(this,2),Ui.dp(this,6));sheet.addView(hint);
+
+        ScrollView scroll=new ScrollView(this);LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.VERTICAL);
+        addFileAction(actions,d,f.isDirectory()?"›":"↗",f.isDirectory()?"Open folder":"Preview / open",false,v->{if(f.isDirectory())showDir(f);else openFile(f);});
+        addFileAction(actions,d,"✓",selected.contains(AppPrefs.canon(f))?"Unselect":"Select",false,v->toggleSelect(f));
+        addFileAction(actions,d,"★",AppPrefs.isFavorite(this,f)?"Remove favorite":"Add favorite",false,v->{AppPrefs.toggleFavorite(this,f);toast(AppPrefs.isFavorite(this,f)?"Added to favorites":"Removed from favorites");});
+        addFileAction(actions,d,"C","Copy",false,v->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(false);});
+        addFileAction(actions,d,"M","Move",false,v->{selected.clear();selected.add(AppPrefs.canon(f));prepareClipboard(true);});
+        addFileAction(actions,d,"R","Rename",false,v->rename(f));
+        if(f.isFile())addFileAction(actions,d,"i","Properties / SHA-256",false,v->hashDialog(f));
+        if(FileEngine.isArchive(f))addFileAction(actions,d,"Z","Extract ZIP here",false,v->extract(f));
+        if(FileEngine.isApk(f))addFileAction(actions,d,"A","APK info / Install",false,v->apkInfo(f));
+        addFileAction(actions,d,"T","Move to Trash",false,v->trashOne(f));
+        addFileAction(actions,d,"!","Delete permanently",true,v->permanentDelete(f));
+        scroll.addView(actions);sheet.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));
+
+        int h=(int)(getResources().getDisplayMetrics().heightPixels*0.80f);
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,h,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);d.show();
+    }
+
+    private void addFileAction(LinearLayout box,Dialog dialog,String icon,String label,boolean danger,View.OnClickListener action){
+        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(this,10),Ui.dp(this,8),Ui.dp(this,10),Ui.dp(this,8));row.setBackground(Ui.rounded(this,danger?0xFFFFF0EE:Ui.SURFACE,14,danger?0xFFFFC9C2:Ui.BORDER,1));
+        TextView b=Ui.text(this,icon,14);b.setGravity(Gravity.CENTER);b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);b.setTextColor(danger?Ui.DANGER:Ui.ORANGE);b.setPadding(0,0,0,0);b.setBackground(Ui.rounded(this,danger?0xFFFFE0DC:Ui.ACCENT_SOFT,12,Color.TRANSPARENT,0));row.addView(b,new LinearLayout.LayoutParams(Ui.dp(this,38),Ui.dp(this,38)));
+        TextView t=Ui.text(this,label,13);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setTextColor(danger?Ui.DANGER:Ui.TEXT);t.setPadding(Ui.dp(this,12),0,0,0);row.addView(t,new LinearLayout.LayoutParams(0,Ui.dp(this,42),1));
+        row.setOnClickListener(v->{dialog.dismiss();action.onClick(v);});LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,6));box.addView(row,lp);
+    }
 
     private void createMenu(){String[]o={"New folder","New empty text file"};new AlertDialog.Builder(this).setTitle("Create").setItems(o,(d,w)->{EditText e=new EditText(this);e.setHint(w==0?"Folder name":"File name.txt");new AlertDialog.Builder(this).setTitle(o[w]).setView(e).setPositiveButton("Create",(x,y)->{String n=e.getText().toString().trim();if(n.isEmpty()||n.contains("/")){toast("Invalid name");return;}try{File f=new File(cwd,n);boolean ok=w==0?f.mkdir():f.createNewFile();if(!ok)toast("Already exists or create failed");showDir(cwd);}catch(Exception z){toast("Create failed: "+z.getMessage());}}).setNegativeButton("Cancel",null).show();}).show();}
     private void rename(File f){EditText e=new EditText(this);e.setText(f.getName());new AlertDialog.Builder(this).setTitle("Rename").setView(e).setPositiveButton("Rename",(d,w)->{String n=e.getText().toString().trim();if(n.length()>0&&!n.contains("/")&&f.renameTo(new File(f.getParentFile(),n)))showDir(cwd);else toast("Rename failed or invalid name");}).setNegativeButton("Cancel",null).show();}

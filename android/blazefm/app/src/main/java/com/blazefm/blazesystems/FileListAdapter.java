@@ -1,19 +1,24 @@
 package com.blazefm.blazesystems;
 
 import android.app.Activity;
-import android.graphics.Color;
-import android.graphics.Typeface;
+import android.graphics.*;
+import android.util.LruCache;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.*;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.*;
 
 final class FileListAdapter extends BaseAdapter {
+    private static final LruCache<String,Bitmap> THUMBS=new LruCache<String,Bitmap>(4096){
+        @Override protected int sizeOf(String key,Bitmap value){return Math.max(1,value.getByteCount()/1024);}
+    };
+    private static final ExecutorService POOL=Executors.newFixedThreadPool(2);
+    private static final Set<String> PENDING=Collections.synchronizedSet(new HashSet<String>());
+
     private final Activity a;private final List<File> files;private final Set<String> selected;
     private final SimpleDateFormat date=new SimpleDateFormat("MMM d · HH:mm",Locale.getDefault());
     FileListAdapter(Activity activity,List<File> items,Set<String> sel){a=activity;files=items;selected=sel;}
@@ -30,18 +35,38 @@ final class FileListAdapter extends BaseAdapter {
         row.setBackground(Ui.rounded(a,sel?Ui.ACCENT_SOFT:Ui.SURFACE,16,sel?Ui.ORANGE:Ui.BORDER,1));
         row.setElevation(Ui.dp(a,1));outer.addView(row,new LinearLayout.LayoutParams(-1,-2));
 
-        TextView badge=Ui.text(a,sel?"✓":symbol(f),f.isDirectory()?20:17);badge.setGravity(Gravity.CENTER);badge.setTypeface(Typeface.DEFAULT_BOLD);badge.setTextColor(sel?Ui.ORANGE:badgeColor(f));badge.setPadding(0,0,0,0);
-        badge.setBackground(Ui.rounded(a,sel?Color.WHITE:badgeBg(f),14,Color.TRANSPARENT,0));
-        row.addView(badge,new LinearLayout.LayoutParams(Ui.dp(a,46),Ui.dp(a,46)));
+        FrameLayout thumbBox=new FrameLayout(a);row.addView(thumbBox,new LinearLayout.LayoutParams(Ui.dp(a,48),Ui.dp(a,48)));
+        TextView badge=Ui.text(a,sel?"✓":symbol(f),f.isDirectory()?20:17);badge.setGravity(Gravity.CENTER);badge.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);badge.setTextColor(sel?Ui.ORANGE:badgeColor(f));badge.setPadding(0,0,0,0);badge.setBackground(Ui.rounded(a,sel?Color.WHITE:badgeBg(f),14,Color.TRANSPARENT,0));thumbBox.addView(badge,new FrameLayout.LayoutParams(-1,-1));
+        if(FileEngine.isImage(f)&&!sel){
+            ImageView image=new ImageView(a);image.setScaleType(ImageView.ScaleType.CENTER_CROP);image.setBackground(Ui.rounded(a,0xFFF0F2F5,14,Color.TRANSPARENT,0));image.setClipToOutline(true);thumbBox.addView(image,new FrameLayout.LayoutParams(-1,-1));
+            bindThumb(image,f);
+        }
 
         LinearLayout info=new LinearLayout(a);info.setOrientation(LinearLayout.VERTICAL);info.setPadding(Ui.dp(a,12),0,Ui.dp(a,8),0);
-        TextView name=Ui.text(a,f.getName(),14);name.setTextColor(Ui.TEXT);name.setTypeface(Typeface.DEFAULT_BOLD);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);name.setPadding(0,0,0,0);info.addView(name);
+        TextView name=Ui.text(a,f.getName(),14);name.setTextColor(Ui.TEXT);name.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);name.setSingleLine(true);name.setEllipsize(android.text.TextUtils.TruncateAt.MIDDLE);name.setPadding(0,0,0,0);info.addView(name);
         TextView meta=Ui.text(a,meta(f),11);meta.setTextColor(Ui.MUTED);meta.setSingleLine(true);meta.setPadding(0,Ui.dp(a,3),0,0);info.addView(meta);
         row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
 
         TextView chevron=Ui.text(a,f.isDirectory()?"›":"⋮",22);chevron.setTextColor(Ui.MUTED);chevron.setGravity(Gravity.CENTER);chevron.setPadding(0,0,0,0);
         row.addView(chevron,new LinearLayout.LayoutParams(Ui.dp(a,32),Ui.dp(a,44)));
         return outer;
+    }
+
+    private void bindThumb(ImageView v,File f){
+        final String key=f.getAbsolutePath()+":"+f.lastModified()+":"+f.length();v.setTag(key);Bitmap cached=THUMBS.get(key);if(cached!=null){v.setImageBitmap(cached);return;}
+        if(!PENDING.add(key))return;
+        POOL.execute(()->{
+            Bitmap bm=null;try{bm=decode(f,160);}catch(Throwable ignored){}
+            if(bm!=null)THUMBS.put(key,bm);PENDING.remove(key);final Bitmap out=bm;
+            a.runOnUiThread(()->{Object tag=v.getTag();if(out!=null&&key.equals(tag))v.setImageBitmap(out);});
+        });
+    }
+
+    private Bitmap decode(File f,int target){
+        BitmapFactory.Options o=new BitmapFactory.Options();o.inJustDecodeBounds=true;BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(o.outWidth<=0||o.outHeight<=0)return null;
+        int max=Math.max(o.outWidth,o.outHeight);o.inSampleSize=1;while(max/o.inSampleSize>target*2)o.inSampleSize*=2;o.inJustDecodeBounds=false;o.inPreferredConfig=Bitmap.Config.RGB_565;
+        Bitmap src=BitmapFactory.decodeFile(f.getAbsolutePath(),o);if(src==null)return null;int side=Math.min(src.getWidth(),src.getHeight());int x=(src.getWidth()-side)/2,y=(src.getHeight()-side)/2;
+        Bitmap crop=Bitmap.createBitmap(src,x,y,side,side);Bitmap out=Bitmap.createScaledBitmap(crop,target,target,true);if(crop!=src)crop.recycle();if(out!=src)src.recycle();return out;
     }
 
     private String meta(File f){
