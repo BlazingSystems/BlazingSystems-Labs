@@ -1,0 +1,6 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_copy" android:title="Copy" android:icon="@drawable/ic_copy" app:showAsAction="always"/>
+    <item android:id="@+id/action_move" android:title="Move" android:icon="@drawable/ic_move" app:showAsAction="always"/>
+    <item android:id="@+id/action_zip" android:title="ZIP" android:icon="@drawable/ic_archive" app:showAsAction="always"/>
+    <item android:id="@+id/action_trash" android:title="Trash" android:icon="@drawable/ic_delete" app:showAsAction="always"/>
+</menu>
