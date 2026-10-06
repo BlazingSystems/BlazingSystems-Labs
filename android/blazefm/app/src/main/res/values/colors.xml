@@ -1,1 +1,6 @@
-<resources><color name="blaze">#E65100</color><color name="blaze_dark">#BF360C</color></resources>
+<resources>
+    <color name="blaze_orange">#FF6D00</color>
+    <color name="blaze_orange_dark">#E65100</color>
+    <color name="blaze_bg">#F5F6F8</color>
+    <color name="blaze_text">#1C1B1F</color>
+</resources>
