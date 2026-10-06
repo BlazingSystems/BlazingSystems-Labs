@@ -15,6 +15,17 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - emphasized New action plus compact Up/Home/Paste controls;
 - shared rounded buttons and surfaces across the legacy utility screens without adding Compose or a heavy UI framework.
 
+### 1.2.0 reliability hardening
+- Cloud, Remote, Root exports and APK backups use Android's Downloads collection on Android 10+ instead of assuming unrestricted filesystem writes;
+- recursive copy, move, search, analyzer, delete and ZIP operations do not follow local symbolic links;
+- copy/move rejects putting a directory inside itself;
+- failed copy, ZIP and extract operations clean up incomplete output where practical;
+- ZIP extraction keeps zip-slip protection and stops before exhausting available device storage;
+- similar-photo results are memory-bounded while still reporting the total matches found;
+- SFTP password text is cleared after a successful connection;
+- removing a saved SAF provider also releases its persisted URI permission;
+- APK install on Android 8+ routes to the per-app unknown-sources permission when required.
+
 ## Implemented in 1.2.0
 
 ### Local files
@@ -69,7 +80,7 @@ The App Manager also requests full installed-package visibility so it can actual
 - streaming copy/ZIP/hash operations with 64 KiB buffers;
 - no forced `largeHeap`;
 - image decoding is sampled;
-- similar-photo scans are capped at 5,000 images per folder pass to avoid pathological O(n²) memory/CPU behavior on low-RAM hardware;
+- similar-photo scans are capped at 5,000 images per folder pass and retain only the best 2,000 matching pairs in memory;
 - release builds use R8 and resource shrinking.
 
 ## Network security notes
