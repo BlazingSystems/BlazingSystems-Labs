@@ -2,7 +2,7 @@ name: BlazeFM Android
 
 on:
   push:
-    branches: [ main, blazefm-v1.3.0, blazefm-v1.3.0 ]
+    branches: [ main, blazefm-v1.3.0 ]
     paths:
       - 'android/blazefm/**'
       - '.github/workflows/blazefm-android.yml'
@@ -10,6 +10,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: blazefm-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
