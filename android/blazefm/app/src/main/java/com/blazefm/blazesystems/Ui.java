@@ -68,6 +68,17 @@ final class Ui {
         if(strokeDp>0)g.setStroke(dp(a,strokeDp),strokeColor);return g;
     }
 
+    static LinearLayout screenHeader(Activity a,String title,String subtitle){
+        LinearLayout box=new LinearLayout(a);box.setOrientation(LinearLayout.VERTICAL);box.setGravity(Gravity.CENTER_VERTICAL);
+        box.setPadding(dp(a,16),dp(a,14),dp(a,16),dp(a,12));box.setBackgroundColor(HEADER);box.setElevation(dp(a,4));
+        TextView t=text(a,title,20);t.setTextColor(Color.WHITE);t.setTypeface(Typeface.DEFAULT_BOLD);t.setPadding(0,0,0,0);box.addView(t);
+        TextView s=text(a,subtitle,11);s.setTextColor(HEADER_MUTED);s.setPadding(0,dp(a,3),0,0);box.addView(s);return box;
+    }
+
+    static void prepareList(Activity a,android.widget.ListView list){
+        list.setDivider(null);list.setDividerHeight(0);list.setClipToPadding(false);list.setPadding(dp(a,8),dp(a,8),dp(a,8),dp(a,10));list.setBackgroundColor(BG);
+    }
+
     static TextView header(Activity a,String title,String subtitle){
         LinearLayout box=new LinearLayout(a);box.setOrientation(LinearLayout.VERTICAL);box.setGravity(Gravity.CENTER_VERTICAL);
         box.setPadding(dp(a,16),dp(a,12),dp(a,16),dp(a,10));box.setBackgroundColor(HEADER);
