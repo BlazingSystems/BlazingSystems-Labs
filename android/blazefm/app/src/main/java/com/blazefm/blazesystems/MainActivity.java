@@ -27,7 +27,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private View homePanel,emptyState,headerDetails; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
+    private View homePanel,emptyState,headerDetails,searchBar; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
     private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9;
 
@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
         mainToolbar=findViewById(R.id.main_toolbar);
         selectionToolbar=findViewById(R.id.selection_toolbar);
         headerDetails=findViewById(R.id.header_details);
+        searchBar=findViewById(R.id.search_bar);
         folderTitle=findViewById(R.id.folder_title);
         path=findViewById(R.id.path);
         status=findViewById(R.id.status);
@@ -57,10 +58,11 @@ public class MainActivity extends Activity {
         recycler.setItemAnimator(null);
 
         mainToolbar.setOnMenuItemClickListener(item->{
-            if(item.getItemId()==R.id.action_search){searchDialog();return true;}
             if(item.getItemId()==R.id.action_tools){tools();return true;}
             return false;
         });
+
+        searchBar.setOnClickListener(v->searchDialog());
 
         selectionToolbar.setNavigationOnClickListener(v->clearSelection());
         selectionToolbar.setOnMenuItemClickListener(item->{
@@ -159,6 +161,8 @@ public class MainActivity extends Activity {
         mainToolbar.setVisibility(selecting?View.GONE:View.VISIBLE);
         selectionToolbar.setVisibility(selecting?View.VISIBLE:View.GONE);
         headerDetails.setVisibility(selecting?View.GONE:View.VISIBLE);
+        searchBar.setVisibility(selecting?View.GONE:View.VISIBLE);
+        if(selecting)homePanel.setVisibility(View.GONE);
         selectionToolbar.setTitle(selected.size()+" selected");
         fab.setVisibility(selecting?View.GONE:View.VISIBLE);
 
