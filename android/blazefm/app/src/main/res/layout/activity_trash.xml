@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/blaze_background">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/trash_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="Trash"
+        app:subtitle="Restore or permanently remove items" />
+
+    <TextView
+        android:id="@+id/trash_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/blaze_on_surface_variant" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/trash_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="6dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="16dp" />
+
+        <LinearLayout
+            android:id="@+id/trash_empty"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:padding="16dp"
+                android:background="@drawable/bg_icon_container"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_delete"
+                app:tint="@color/blaze_primary" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:text="Trash is empty"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="@color/blaze_on_surface" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="5dp"
+                android:gravity="center"
+                android:text="Items moved to BlazeFM Trash will appear here."
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/blaze_on_surface_variant" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/trash_empty_all"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="14dp"
+        android:text="Empty Trash"
+        app:icon="@drawable/ic_delete" />
+</LinearLayout>
