@@ -34,6 +34,50 @@ jobs:
           -dontwarn org.ietf.jgss.**
           -dontwarn org.apache.logging.log4j.**
           EOF
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("android/blazefm")
+          f = root / "app/src/main/java/com/blazefm/blazesystems/FileEngine.java"
+          s = f.read_text()
+          replacements = {
+              "sizes.computeIfAbsent(f.length(),k->new ArrayList<>()).add(f);": "bucket(sizes,f.length()).add(f);",
+              "quick.computeIfAbsent(k,x->new ArrayList<>()).add(f);": "bucket(quick,k).add(f);",
+              "full.computeIfAbsent(h,x->new ArrayList<>()).add(f);": "bucket(full,h).add(f);",
+              "Collections.sort(pairs,Comparator.comparingInt(x->x.distance));": "Collections.sort(pairs,(a,b)->a.distance<b.distance?-1:(a.distance==b.distance?0:1));",
+          }
+          for old, new in replacements.items():
+              if old not in s:
+                  raise SystemExit("compatibility patch marker missing: " + old)
+              s = s.replace(old, new)
+          helper = "\n    private static <K,V> List<V> bucket(Map<K,List<V>> map,K key){List<V> v=map.get(key);if(v==null){v=new ArrayList<V>();map.put(key,v);}return v;}\n"
+          pos = s.rfind("}")
+          if pos < 0:
+              raise SystemExit("FileEngine class close not found")
+          s = s[:pos] + helper + s[pos:]
+          f.write_text(s)
+
+          styles = root / "app/src/main/res/values/styles.xml"
+          s = styles.read_text()
+          s = re.sub(r'\\s*<item name="android:windowLightStatusBar">false</item>\\s*', "\n", s)
+          styles.write_text(s)
+
+          cloud = root / "app/src/main/java/com/blazefm/blazesystems/CloudActivity.java"
+          s = cloud.read_text()
+          old = 'int flags=data.getFlags()&(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);try{getContentResolver().takePersistableUriPermission(u,flags);}catch(Exception ignored){}'
+          new = 'try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);}catch(Exception first){try{getContentResolver().takePersistableUriPermission(u,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(Exception ignored){}}'
+          if old not in s:
+              raise SystemExit("CloudActivity persistable-permission marker missing")
+          cloud.write_text(s.replace(old, new))
+
+          manifest = root / "app/src/main/AndroidManifest.xml"
+          s = manifest.read_text()
+          s, count = re.subn(r'\\s*<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"\\s*/>\\s*', "\n", s)
+          if count != 1:
+              raise SystemExit("QUERY_ALL_PACKAGES marker missing or duplicated")
+          manifest.write_text(s)
+          PY
           echo '--- candidate app/build.gradle ---'
           cat android/blazefm/app/build.gradle
           echo '--- candidate Java files ---'
