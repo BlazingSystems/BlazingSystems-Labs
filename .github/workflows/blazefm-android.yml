@@ -58,6 +58,7 @@ jobs:
 
       - name: Publish GitHub prerelease from main
         if: github.ref == 'refs/heads/main'
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -67,3 +68,42 @@ jobs:
             --prerelease \
             --title "BlazeFM v1.2.0 Preview ${GITHUB_RUN_NUMBER}" \
             --notes "Installable debug-signed preview plus unsigned/minified release APK. Production signing key is intentionally not stored in this public repository."
+
+      - name: Publish durable APK fallback branch
+        if: github.ref == 'refs/heads/main'
+        shell: bash
+        run: |
+          set -euo pipefail
+          ASSET_BRANCH="blazefm-release-assets"
+          VERSION_DIR="v1.2.0-preview.${GITHUB_RUN_NUMBER}"
+          TMP_DIR="$(mktemp -d)"
+          cp -a dist/. "$TMP_DIR/"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git ls-remote --exit-code --heads origin "$ASSET_BRANCH" >/dev/null 2>&1; then
+            git fetch origin "$ASSET_BRANCH:$ASSET_BRANCH"
+            git checkout "$ASSET_BRANCH"
+          else
+            git checkout --orphan "$ASSET_BRANCH"
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p "$VERSION_DIR"
+          cp -a "$TMP_DIR/." "$VERSION_DIR/"
+          cat > "$VERSION_DIR/README.md" <<EOF
+          # BlazeFM v1.2.0 Preview ${GITHUB_RUN_NUMBER}
+
+          Built from commit `$GITHUB_SHA`.
+
+          - `BlazeFM-v1.2.0-preview.apk` — installable debug-signed preview.
+          - `BlazeFM-v1.2.0-release-unsigned.apk` — minified unsigned release output; not directly installable until signed.
+          - `SHA256SUMS.txt` — APK checksums.
+
+          Production signing material is intentionally not stored in this public repository.
+          EOF
+
+          git add "$VERSION_DIR"
+          git commit -m "Publish BlazeFM v1.2.0 Preview ${GITHUB_RUN_NUMBER}"
+          git push origin "$ASSET_BRANCH"
