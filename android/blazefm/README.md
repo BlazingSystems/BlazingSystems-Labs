@@ -14,6 +14,10 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - MaterialToolbar plus contextual selection toolbar, BottomNavigationView, assist Chips and Extended FAB;
 - real Android vector drawables for file types and navigation/actions instead of emoji or Unicode glyphs;
 - native Material dialogs for permissions, destructive confirmations, results, APK information and errors;
+- Analyzer, Preview, App Manager, Cloud provider/browser, Root Browser and SMB/FTP/SFTP Network screens migrated to XML/Material surfaces;
+- shared RecyclerView row architecture across local, cloud, remote, root and app-management browsers;
+- shared Material BottomSheet action menus and Material text prompts replace the former hand-built full-screen sheets and Unicode pseudo-icons;
+- removed the superseded ListView adapters and collapsed the old programmatic Ui helper layer to a density conversion utility only;
 - storage dashboard and category shortcuts for Images, Video, Audio, Documents and APKs;
 - retained bounded asynchronous thumbnail decoding and the existing low-memory file-operation engine;
 - Android 5.0 / API 21 remains the minimum supported platform.
