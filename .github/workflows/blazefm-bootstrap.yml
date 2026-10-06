@@ -60,8 +60,10 @@ jobs:
 
           styles = root / "app/src/main/res/values/styles.xml"
           s = styles.read_text()
-          s = re.sub(r'\\s*<item name="android:windowLightStatusBar">false</item>\\s*', "\n", s)
-          styles.write_text(s)
+          marker = '<item name="android:windowLightStatusBar">false</item>'
+          if marker not in s:
+              raise SystemExit("windowLightStatusBar marker missing")
+          styles.write_text(s.replace(marker, ""))
 
           cloud = root / "app/src/main/java/com/blazefm/blazesystems/CloudActivity.java"
           s = cloud.read_text()
@@ -73,10 +75,10 @@ jobs:
 
           manifest = root / "app/src/main/AndroidManifest.xml"
           s = manifest.read_text()
-          s, count = re.subn(r'\\s*<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"\\s*/>\\s*', "\n", s)
-          if count != 1:
-              raise SystemExit("QUERY_ALL_PACKAGES marker missing or duplicated")
-          manifest.write_text(s)
+          marker = '<uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>'
+          if marker not in s:
+              raise SystemExit("QUERY_ALL_PACKAGES marker missing")
+          manifest.write_text(s.replace(marker, ""))
           PY
           echo '--- candidate app/build.gradle ---'
           cat android/blazefm/app/build.gradle
