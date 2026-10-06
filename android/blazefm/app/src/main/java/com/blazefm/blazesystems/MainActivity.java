@@ -27,12 +27,16 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private View homePanel,emptyState,headerDetails,searchBar; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
+    private View homePanel,emptyState,headerDetails,searchBar; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip,quickFavorites,quickRecent; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
     private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9,REQ_SEARCH=10;
 
     @Override public void onCreate(Bundle b){super.onCreate(b);buildUi();ensurePermission();cwd=Environment.getExternalStorageDirectory();showDir(cwd);}
-    @Override public void onResume(){super.onResume();if(cwd!=null&&!showingResults)showDir(cwd);}
+    @Override public void onResume(){
+        super.onResume();
+        if(bottomNav!=null)bottomNav.getMenu().findItem(R.id.nav_files).setChecked(true);
+        if(cwd!=null&&!showingResults)showDir(cwd);
+    }
 
     private void buildUi(){
         setContentView(R.layout.activity_main);
@@ -51,6 +55,8 @@ public class MainActivity extends Activity {
         sortChip=findViewById(R.id.chip_sort);
         viewChip=findViewById(R.id.chip_view);
         pasteChip=findViewById(R.id.chip_paste);
+        quickFavorites=findViewById(R.id.quick_favorites);
+        quickRecent=findViewById(R.id.quick_recent);
         fab=findViewById(R.id.fab_new);
         bottomNav=findViewById(R.id.bottom_nav);
 
@@ -92,8 +98,8 @@ public class MainActivity extends Activity {
         findViewById(R.id.category_audio).setOnClickListener(v->categorySearch(2,"Audio"));
         findViewById(R.id.category_docs).setOnClickListener(v->categorySearch(3,"Documents"));
         findViewById(R.id.category_apks).setOnClickListener(v->categorySearch(4,"APKs"));
-        findViewById(R.id.quick_favorites).setOnClickListener(v->showPaths("Favorites",AppPrefs.favorites(this)));
-        findViewById(R.id.quick_recent).setOnClickListener(v->showPaths("Recent files",AppPrefs.recents(this)));
+        quickFavorites.setOnClickListener(v->showPaths("Favorites",AppPrefs.favorites(this)));
+        quickRecent.setOnClickListener(v->showPaths("Recent files",AppPrefs.recents(this)));
 
         bottomNav.setSelectedItemId(R.id.nav_files);
         bottomNav.setOnItemSelectedListener(item->{
@@ -135,6 +141,8 @@ public class MainActivity extends Activity {
         int pct=total>0?(int)((used*100L)/total):0;
         storageBar.setMax(100);storageBar.setProgress(pct);
         storageText.setText(pct+"% used · "+fmt(free)+" free of "+fmt(total));
+        quickFavorites.setText("Favorites · "+existingPathCount(AppPrefs.favorites(this)));
+        quickRecent.setText("Recent · "+existingPathCount(AppPrefs.recents(this)));
     }
 
     private void categorySearch(int category,String label){
@@ -298,8 +306,6 @@ public class MainActivity extends Activity {
     private void trashSelection(){List<File>a=selectedFiles();if(a.isEmpty())return;new MaterialAlertDialogBuilder(this).setTitle("Move selected to Trash?").setMessage(a.size()+" item(s) can be restored later.").setPositiveButton("Trash",(d,w)->new Thread(()->{for(File f:a)try{TrashManager.moveToTrash(this,f);}catch(Exception ignored){}runOnUiThread(()->{clearSelection();showDir(cwd);});}).start()).setNegativeButton("Cancel",null).show();}
     private void permanentDelete(File f){new MaterialAlertDialogBuilder(this).setTitle("Delete permanently?").setMessage(f.getAbsolutePath()+"\n\nThis cannot be restored from BlazeFM Trash.").setPositiveButton("DELETE",(d,w)->new Thread(()->{boolean ok=FileEngine.delete(f);runOnUiThread(()->{if(!ok)toast("Delete failed");showDir(cwd);});}).start()).setNegativeButton("Cancel",null).show();}
 
-    private void searchDialog(){inputSheet("Search in "+(cwd==null?"Files":cwd.getName()),"Filename contains…","","Search",this::runSearch);}
-    private void runSearch(String q){if(q.trim().isEmpty())return;cancel=false;progress("Searching…");File base=cwd;new Thread(()->{List<File>a=FileEngine.walk(base,AppPrefs.showHidden(this),new P());ArrayList<File>r=new ArrayList<>();String needle=q.toLowerCase(Locale.US);for(File f:a)if(f.getName().toLowerCase(Locale.US).contains(needle))r.add(f);runOnUiThread(()->showResults("Search: "+q,r));}).start();}
     private void showResults(String t,List<File>r){
         showingResults=true;
         shown.clear();
@@ -387,6 +393,12 @@ public class MainActivity extends Activity {
 
     private String itemCount(int count){return count==1?"1 item":count+" items";}
 
+    private int existingPathCount(Collection<String> paths){
+        int count=0;
+        for(String p:paths)if(new File(p).exists())count++;
+        return count;
+    }
+
     private String friendlyPath(File dir){
         File home=Environment.getExternalStorageDirectory();
         if(dir==null)return "Files";
@@ -416,6 +428,7 @@ public class MainActivity extends Activity {
         }
         if(files.isEmpty()){toast("No saved items");return;}
         showResults(t,files);
+        path.setText("Saved locations · tap Up to return");
     }
     private void trashDialog(){List<TrashManager.Item>a=TrashManager.list(this);if(a.isEmpty()){toast("Trash is empty");return;}String[]rows=new String[a.size()];for(int i=0;i<rows.length;i++)rows[i]=a.get(i).stored.getName()+"\nfrom: "+a.get(i).original;new MaterialAlertDialogBuilder(this).setTitle("Trash · "+a.size()+" items").setItems(rows,(d,w)->trashItem(a.get(w))).setNeutralButton("Empty Trash",(d,w)->new MaterialAlertDialogBuilder(this).setTitle("Empty Trash permanently?").setPositiveButton("Empty",(x,y)->new Thread(()->{TrashManager.empty(this);runOnUiThread(()->toast("Trash emptied"));}).start()).setNegativeButton("Cancel",null).show()).setPositiveButton("Close",null).show();}
     private void trashItem(TrashManager.Item i){String[]o={"Restore","Delete permanently"};new MaterialAlertDialogBuilder(this).setTitle(i.stored.getName()).setMessage("Original: "+i.original).setItems(o,(d,w)->{if(w==0)new Thread(()->{try{File r=TrashManager.restore(this,i);runOnUiThread(()->toast("Restored: "+r.getAbsolutePath()));}catch(Exception e){runOnUiThread(()->toast("Restore failed: "+e.getMessage()));}}).start();else new Thread(()->{TrashManager.purge(this,i);runOnUiThread(()->toast("Deleted permanently"));}).start();}).show();}
