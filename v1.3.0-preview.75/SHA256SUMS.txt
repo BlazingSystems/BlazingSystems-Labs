@@ -1,0 +1,2 @@
+87010aeaaea649f670a9c3a8a0250532ad40e971d5742696e0d84c1d9afeb7fc  BlazeFM-v1.3.0-preview.apk
+6e93ccb5f45be1e6061746c991abe0c149edd6399664dbad08d15373fe78fb78  BlazeFM-v1.3.0-release-unsigned.apk
