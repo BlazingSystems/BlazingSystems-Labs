@@ -1,0 +1,68 @@
+name: BlazeFM v1.1.0 Bootstrap
+
+on:
+  push:
+    branches: [ blazefm-v1.1.0 ]
+    paths:
+      - '.github/blazefm-source/**'
+      - '.github/workflows/blazefm-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate-and-expand:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconstruct exact source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/blazefm-source/part_* | base64 -d > /tmp/blazefm-source.tar.gz
+          echo "bc4d812f24d31bc6bb05933faefba578ee10c8ce1c18d24db0dfec5d97d4c357  /tmp/blazefm-source.tar.gz" | sha256sum -c -
+          rm -rf android/blazefm
+          mkdir -p android/blazefm
+          tar -xzf /tmp/blazefm-source.tar.gz -C android/blazefm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 35 platform
+        run: |
+          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+
+      - name: Set up Gradle 8.9
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Validate BlazeFM candidate
+        working-directory: android/blazefm
+        run: gradle --no-daemon --stacktrace clean :app:assembleDebug :app:assembleRelease :app:lint
+
+      - name: Commit validated source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .github/blazefm-source
+          rm -f .github/workflows/blazefm-bootstrap.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A android/blazefm .github
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "Upgrade BlazeFM to v1.1.0 ES-style file manager"
+          git push origin HEAD:blazefm-v1.1.0
