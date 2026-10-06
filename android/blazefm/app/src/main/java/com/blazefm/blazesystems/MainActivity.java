@@ -10,12 +10,23 @@ import android.os.*;
 import android.provider.Settings;
 import android.view.*;
 import android.widget.*;
+
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.progressindicator.LinearProgressIndicator;
+
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private LinearLayout root,selectionBar,homePanel,emptyState; private FrameLayout contentFrame; private ListView list; private GridView grid; private TextView path,status,title,folderTitle,storageText; private ProgressBar storageBar; private Button sortButton,viewButton;
+    private View homePanel,emptyState,headerDetails; private RecyclerView recycler; private TextView path,status,folderTitle,storageText; private LinearProgressIndicator storageBar; private MaterialToolbar mainToolbar,selectionToolbar; private Chip sortChip,viewChip,pasteChip; private ExtendedFloatingActionButton fab; private BottomNavigationView bottomNav;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
     private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9;
 
@@ -23,89 +34,135 @@ public class MainActivity extends Activity {
     @Override public void onResume(){super.onResume();if(cwd!=null&&!showingResults)showDir(cwd);}
 
     private void buildUi(){
-        root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Ui.BG);
+        setContentView(R.layout.activity_main);
+        mainToolbar=findViewById(R.id.main_toolbar);
+        selectionToolbar=findViewById(R.id.selection_toolbar);
+        headerDetails=findViewById(R.id.header_details);
+        folderTitle=findViewById(R.id.folder_title);
+        path=findViewById(R.id.path);
+        status=findViewById(R.id.status);
+        homePanel=findViewById(R.id.home_panel);
+        emptyState=findViewById(R.id.empty_state);
+        storageText=findViewById(R.id.storage_text);
+        storageBar=findViewById(R.id.storage_bar);
+        recycler=findViewById(R.id.file_list);
+        sortChip=findViewById(R.id.chip_sort);
+        viewChip=findViewById(R.id.chip_view);
+        pasteChip=findViewById(R.id.chip_paste);
+        fab=findViewById(R.id.fab_new);
+        bottomNav=findViewById(R.id.bottom_nav);
 
-        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.VERTICAL);top.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,16),Ui.dp(this,10));top.setBackgroundColor(Ui.HEADER);top.setElevation(Ui.dp(this,4));
-        LinearLayout brandRow=new LinearLayout(this);brandRow.setOrientation(LinearLayout.HORIZONTAL);brandRow.setGravity(Gravity.CENTER_VERTICAL);
-        title=Ui.text(this,"BlazeFM",22);title.setTextColor(Color.WHITE);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setPadding(0,0,0,0);brandRow.addView(title,new LinearLayout.LayoutParams(0,-2,1));
-        Button search=Ui.iconButton(this,"⌕");search.setContentDescription("Search");search.setOnClickListener(v->searchDialog());brandRow.addView(search,new LinearLayout.LayoutParams(Ui.dp(this,46),Ui.dp(this,42)));
-        Button more=Ui.iconButton(this,"⋮");more.setContentDescription("More tools");more.setOnClickListener(v->tools());brandRow.addView(more,new LinearLayout.LayoutParams(Ui.dp(this,46),Ui.dp(this,42)));
-        top.addView(brandRow);
+        recycler.setHasFixedSize(false);
+        recycler.setItemAnimator(null);
 
-        folderTitle=Ui.text(this,"Internal storage",18);folderTitle.setTextColor(Color.WHITE);folderTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);folderTitle.setPadding(0,Ui.dp(this,8),0,0);top.addView(folderTitle);
-        path=Ui.text(this,"",11);path.setTextColor(Ui.HEADER_MUTED);path.setSingleLine(true);path.setEllipsize(android.text.TextUtils.TruncateAt.START);path.setTextIsSelectable(true);path.setPadding(0,Ui.dp(this,2),0,Ui.dp(this,8));top.addView(path);
+        mainToolbar.setOnMenuItemClickListener(item->{
+            if(item.getItemId()==R.id.action_search){searchDialog();return true;}
+            if(item.getItemId()==R.id.action_tools){tools();return true;}
+            return false;
+        });
 
-        HorizontalScrollView hs=new HorizontalScrollView(this);hs.setHorizontalScrollBarEnabled(false);LinearLayout quick=new LinearLayout(this);quick.setOrientation(LinearLayout.HORIZONTAL);quick.setPadding(0,Ui.dp(this,4),0,Ui.dp(this,2));
-        Button up=Ui.chipButton(this,"↑  Up");up.setOnClickListener(v->up());quick.addView(up,new LinearLayout.LayoutParams(Ui.dp(this,80),Ui.dp(this,40)));
-        Button home=Ui.chipButton(this,"⌂  Home");home.setOnClickListener(v->showDir(Environment.getExternalStorageDirectory()));quick.addView(home,new LinearLayout.LayoutParams(Ui.dp(this,92),Ui.dp(this,40)));
-        sortButton=Ui.chipButton(this,"Sort");sortButton.setOnClickListener(v->sortSheet());quick.addView(sortButton,new LinearLayout.LayoutParams(Ui.dp(this,82),Ui.dp(this,40)));
-        viewButton=Ui.chipButton(this,AppPrefs.gridView(this)?"≡  List":"▦  Grid");viewButton.setOnClickListener(v->toggleView());quick.addView(viewButton,new LinearLayout.LayoutParams(Ui.dp(this,86),Ui.dp(this,40)));
-        Button paste=Ui.chipButton(this,"Paste");paste.setOnClickListener(v->paste());quick.addView(paste,new LinearLayout.LayoutParams(Ui.dp(this,82),Ui.dp(this,40)));
-        Button add=Ui.primaryButton(this,"＋  New");add.setOnClickListener(v->createMenu());quick.addView(add,new LinearLayout.LayoutParams(Ui.dp(this,96),Ui.dp(this,40)));
-        hs.addView(quick);top.addView(hs);root.addView(top);
+        selectionToolbar.setNavigationOnClickListener(v->clearSelection());
+        selectionToolbar.setOnMenuItemClickListener(item->{
+            int id=item.getItemId();
+            if(id==R.id.action_copy){prepareClipboard(false);return true;}
+            if(id==R.id.action_move){prepareClipboard(true);return true;}
+            if(id==R.id.action_zip){zipSelection();return true;}
+            if(id==R.id.action_trash){trashSelection();return true;}
+            if(id==R.id.action_more){
+                List<File> one=selectedFiles();
+                if(one.size()==1)fileMenu(one.get(0));else toast("Select one item for more actions");
+                return true;
+            }
+            return false;
+        });
 
-        status=Ui.text(this,"Ready",11);status.setTextColor(Ui.MUTED);status.setPadding(Ui.dp(this,16),Ui.dp(this,8),Ui.dp(this,16),Ui.dp(this,4));root.addView(status);
+        findViewById(R.id.chip_up).setOnClickListener(v->up());
+        findViewById(R.id.chip_home).setOnClickListener(v->showDir(Environment.getExternalStorageDirectory()));
+        sortChip.setOnClickListener(v->sortSheet());
+        viewChip.setOnClickListener(v->toggleView());
+        pasteChip.setOnClickListener(v->paste());
+        fab.setOnClickListener(v->createMenu());
+        findViewById(R.id.empty_create).setOnClickListener(v->createMenu());
 
-        buildHomePanel();
+        findViewById(R.id.category_images).setOnClickListener(v->categorySearch(0,"Images"));
+        findViewById(R.id.category_video).setOnClickListener(v->categorySearch(1,"Video"));
+        findViewById(R.id.category_audio).setOnClickListener(v->categorySearch(2,"Audio"));
+        findViewById(R.id.category_docs).setOnClickListener(v->categorySearch(3,"Documents"));
+        findViewById(R.id.category_apks).setOnClickListener(v->categorySearch(4,"APKs"));
 
-        contentFrame=new FrameLayout(this);contentFrame.setBackgroundColor(Ui.BG);
-        list=new ListView(this);list.setDivider(null);list.setDividerHeight(0);list.setClipToPadding(false);list.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,10));list.setBackgroundColor(Ui.BG);contentFrame.addView(list,new FrameLayout.LayoutParams(-1,-1));
-        grid=new GridView(this);grid.setNumColumns(GridView.AUTO_FIT);grid.setColumnWidth(Ui.dp(this,112));grid.setHorizontalSpacing(Ui.dp(this,5));grid.setVerticalSpacing(Ui.dp(this,5));grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);grid.setClipToPadding(false);grid.setPadding(Ui.dp(this,8),Ui.dp(this,6),Ui.dp(this,8),Ui.dp(this,10));grid.setBackgroundColor(Ui.BG);contentFrame.addView(grid,new FrameLayout.LayoutParams(-1,-1));
-        emptyState=new LinearLayout(this);emptyState.setOrientation(LinearLayout.VERTICAL);emptyState.setGravity(Gravity.CENTER);emptyState.setPadding(Ui.dp(this,32),Ui.dp(this,24),Ui.dp(this,32),Ui.dp(this,24));
-        TextView emptyIcon=Ui.text(this,"□",42);emptyIcon.setGravity(Gravity.CENTER);emptyIcon.setTextColor(Ui.ORANGE);emptyIcon.setPadding(0,0,0,Ui.dp(this,8));emptyState.addView(emptyIcon);
-        TextView emptyTitle=Ui.text(this,"This folder is empty",16);emptyTitle.setGravity(Gravity.CENTER);emptyTitle.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);emptyTitle.setPadding(0,0,0,Ui.dp(this,4));emptyState.addView(emptyTitle);
-        TextView emptyText=Ui.text(this,"Create a folder or file here, or paste something from the clipboard.",11);emptyText.setGravity(Gravity.CENTER);emptyText.setTextColor(Ui.MUTED);emptyText.setPadding(0,0,0,Ui.dp(this,14));emptyState.addView(emptyText);
-        Button emptyNew=Ui.primaryButton(this,"＋  Create here");emptyNew.setOnClickListener(v->createMenu());emptyState.addView(emptyNew,new LinearLayout.LayoutParams(Ui.dp(this,150),Ui.dp(this,42)));
-        contentFrame.addView(emptyState,new FrameLayout.LayoutParams(-1,-1));root.addView(contentFrame,new LinearLayout.LayoutParams(-1,0,1));
-
-        selectionBar=Ui.toolbar(this);selectionBar.setVisibility(View.GONE);String[]ss={"Copy","Move","Zip","Trash","Clear"};for(String s:ss){Button b=Ui.button(this,s);Ui.equalAdd(selectionBar,b);if(s.equals("Copy"))b.setOnClickListener(v->prepareClipboard(false));if(s.equals("Move"))b.setOnClickListener(v->prepareClipboard(true));if(s.equals("Zip"))b.setOnClickListener(v->zipSelection());if(s.equals("Trash"))b.setOnClickListener(v->trashSelection());if(s.equals("Clear"))b.setOnClickListener(v->clearSelection());}root.addView(selectionBar);
-
-        LinearLayout nav=new LinearLayout(this);nav.setOrientation(LinearLayout.HORIZONTAL);nav.setPadding(Ui.dp(this,6),Ui.dp(this,5),Ui.dp(this,6),Ui.dp(this,7));nav.setBackgroundColor(Ui.SURFACE);nav.setElevation(Ui.dp(this,8));
-        String[]ns={"Files","Analyze","Network","Cloud","Apps"};for(String s:ns){Button n=Ui.navButton(this,s,s.equals("Files"));Ui.equalAdd(nav,n);if(s.equals("Files"))n.setOnClickListener(v->showDir(Environment.getExternalStorageDirectory()));else if(s.equals("Analyze"))n.setOnClickListener(v->{Intent i=new Intent(this,AnalyzerActivity.class);i.putExtra("path",cwd.getAbsolutePath());startActivity(i);});else if(s.equals("Network"))n.setOnClickListener(v->startActivity(new Intent(this,RemoteActivity.class)));else if(s.equals("Cloud"))n.setOnClickListener(v->startActivity(new Intent(this,CloudActivity.class)));else n.setOnClickListener(v->startActivity(new Intent(this,AppManagerActivity.class)));}root.addView(nav);
-
-        setContentView(root);
-        AdapterView.OnItemClickListener click=(p,v,pos,id)->{File f=shown.get(pos);if(!selected.isEmpty()){toggleSelect(f);return;}if(f.isDirectory())showDir(f);else openFile(f);};
-        AdapterView.OnItemLongClickListener hold=(p,v,pos,id)->{File f=shown.get(pos);if(!selected.isEmpty())toggleSelect(f);else fileMenu(f);return true;};
-        list.setOnItemClickListener(click);list.setOnItemLongClickListener(hold);grid.setOnItemClickListener(click);grid.setOnItemLongClickListener(hold);
-    }
-
-    private void buildHomePanel(){
-        homePanel=new LinearLayout(this);homePanel.setOrientation(LinearLayout.VERTICAL);homePanel.setPadding(Ui.dp(this,14),Ui.dp(this,12),Ui.dp(this,14),Ui.dp(this,12));
-        homePanel.setBackground(Ui.rounded(this,Ui.SURFACE,16,Ui.BORDER,1));homePanel.setElevation(Ui.dp(this,1));
-        LinearLayout wrap=new LinearLayout(this);wrap.setPadding(Ui.dp(this,12),Ui.dp(this,5),Ui.dp(this,12),Ui.dp(this,5));wrap.addView(homePanel,new LinearLayout.LayoutParams(-1,-2));root.addView(wrap);
-
-        TextView t=Ui.text(this,"Device storage",14);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setPadding(0,0,0,0);homePanel.addView(t);
-        storageText=Ui.text(this,"",11);storageText.setTextColor(Ui.MUTED);storageText.setPadding(0,Ui.dp(this,3),0,Ui.dp(this,8));homePanel.addView(storageText);
-        storageBar=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);storageBar.setMax(1000);if(Build.VERSION.SDK_INT>=21)storageBar.setProgressTintList(android.content.res.ColorStateList.valueOf(Ui.ORANGE));homePanel.addView(storageBar,new LinearLayout.LayoutParams(-1,Ui.dp(this,6)));
-
-        TextView quickLabel=Ui.text(this,"Quick locations",11);quickLabel.setTextColor(Ui.MUTED);quickLabel.setPadding(0,Ui.dp(this,11),0,Ui.dp(this,5));homePanel.addView(quickLabel);
-        HorizontalScrollView scroll=new HorizontalScrollView(this);scroll.setHorizontalScrollBarEnabled(false);LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);
-        addShortcut(shortcuts,"Downloads",Environment.DIRECTORY_DOWNLOADS);addShortcut(shortcuts,"DCIM",Environment.DIRECTORY_DCIM);addShortcut(shortcuts,"Pictures",Environment.DIRECTORY_PICTURES);addShortcut(shortcuts,"Movies",Environment.DIRECTORY_MOVIES);addShortcut(shortcuts,"Music",Environment.DIRECTORY_MUSIC);
-        scroll.addView(shortcuts);homePanel.addView(scroll);
-    }
-
-    private void addShortcut(LinearLayout bar,String label,String dirName){
-        Button b=Ui.button(this,label);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(Ui.dp(this,94),Ui.dp(this,40));lp.setMargins(0,0,Ui.dp(this,7),0);bar.addView(b,lp);
-        b.setOnClickListener(v->{File d=Environment.getExternalStoragePublicDirectory(dirName);if(d!=null&&d.isDirectory())showDir(d);else toast(label+" folder is unavailable");});
+        bottomNav.setSelectedItemId(R.id.nav_files);
+        bottomNav.setOnItemSelectedListener(item->{
+            int id=item.getItemId();
+            if(id==R.id.nav_files){showDir(Environment.getExternalStorageDirectory());return true;}
+            if(id==R.id.nav_analyze){Intent i=new Intent(this,AnalyzerActivity.class);i.putExtra("path",cwd==null?Environment.getExternalStorageDirectory().getAbsolutePath():cwd.getAbsolutePath());startActivity(i);return true;}
+            if(id==R.id.nav_network){startActivity(new Intent(this,RemoteActivity.class));return true;}
+            if(id==R.id.nav_cloud){startActivity(new Intent(this,CloudActivity.class));return true;}
+            if(id==R.id.nav_apps){startActivity(new Intent(this,AppManagerActivity.class));return true;}
+            return false;
+        });
     }
 
     private void updateHomePanel(){
-        if(homePanel==null||cwd==null)return;File home=Environment.getExternalStorageDirectory();boolean show=cwd.equals(home);homePanel.setVisibility(show?View.VISIBLE:View.GONE);if(!show)return;
-        long total=home.getTotalSpace(),free=home.getFreeSpace(),used=Math.max(0,total-free);int progress=total>0?(int)Math.min(1000,(used*1000L)/total):0;storageBar.setProgress(progress);
-        int pct=total>0?(int)((used*100L)/total):0;storageText.setText(pct+"% used  ·  "+fmt(free)+" free of "+fmt(total));
+        if(homePanel==null||cwd==null)return;
+        File home=Environment.getExternalStorageDirectory();
+        boolean show=!showingResults&&cwd.equals(home);
+        homePanel.setVisibility(show?View.VISIBLE:View.GONE);
+        if(!show)return;
+        long total=home.getTotalSpace(),free=home.getFreeSpace(),used=Math.max(0,total-free);
+        int pct=total>0?(int)((used*100L)/total):0;
+        storageBar.setMax(100);storageBar.setProgress(pct);
+        storageText.setText(pct+"% used · "+fmt(free)+" free of "+fmt(total));
+    }
+
+    private void categorySearch(int category,String label){
+        cancel=false;progress("Scanning "+label.toLowerCase(Locale.US)+"…");
+        File base=Environment.getExternalStorageDirectory();
+        new Thread(()->{
+            List<File> all=FileEngine.walk(base,AppPrefs.showHidden(this),new P());
+            ArrayList<File> result=new ArrayList<>();
+            for(File f:all)if(FileEngine.category(f)==category)result.add(f);
+            runOnUiThread(()->showResults(label,result));
+        }).start();
     }
 
     private void ensurePermission(){if(Build.VERSION.SDK_INT>=30&&!Environment.isExternalStorageManager()){new AlertDialog.Builder(this).setTitle("File access required").setMessage("BlazeFM is a full file manager. Android 11+ requires All files access for normal filesystem browsing, duplicates, archives and Trash. You can still use Cloud/SAF without it.").setPositiveButton("Open settings",(d,w)->{try{startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,Uri.parse("package:"+getPackageName())));}catch(Exception e){startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));}}).setNegativeButton("Later",null).show();}else if(Build.VERSION.SDK_INT>=23&&Build.VERSION.SDK_INT<30&&checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},REQ);}
 
     private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());folderTitle.setText(d.equals(Environment.getExternalStorageDirectory())?"Internal storage":d.getName());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList<File>x=new ArrayList<>();for(File f:a)if((hidden||!f.getName().startsWith("."))&&!f.getName().equals(".BlazeFM_Trash"))x.add(f);sortFiles(x);shown.addAll(x);}updateHomePanel();render();status.setText(shown.size()+" items · "+sortLabel()+((clipboard.size()>0)?" · clipboard "+clipboard.size():""));}
     private void render(){
-        boolean gridMode=AppPrefs.gridView(this);FileListAdapter adapter=new FileListAdapter(this,shown,selected,gridMode);
-        if(shown.isEmpty()){list.setVisibility(View.GONE);grid.setVisibility(View.GONE);emptyState.setVisibility(View.VISIBLE);}
-        else{emptyState.setVisibility(View.GONE);list.setVisibility(gridMode?View.GONE:View.VISIBLE);grid.setVisibility(gridMode?View.VISIBLE:View.GONE);if(gridMode)grid.setAdapter(adapter);else list.setAdapter(adapter);}
-        if(viewButton!=null)viewButton.setText(gridMode?"≡  List":"▦  Grid");
-        selectionBar.setVisibility(selected.isEmpty()?View.GONE:View.VISIBLE);folderTitle.setText(selected.isEmpty()?(cwd!=null&&cwd.equals(Environment.getExternalStorageDirectory())?"Internal storage":cwd==null?"Files":cwd.getName()):selected.size()+" selected");
+        boolean gridMode=AppPrefs.gridView(this);
+        if(showingResults)homePanel.setVisibility(View.GONE);else updateHomePanel();
+
+        int width=getResources().getConfiguration().screenWidthDp;
+        int spans=Math.max(2,Math.min(5,width/120));
+        recycler.setLayoutManager(gridMode?new GridLayoutManager(this,spans):new LinearLayoutManager(this));
+        recycler.setAdapter(new FileRecyclerAdapter(this,shown,selected,gridMode,new FileRecyclerAdapter.Listener(){
+            @Override public void onClick(File f){
+                if(!selected.isEmpty()){toggleSelect(f);return;}
+                if(f.isDirectory())showDir(f);else openFile(f);
+            }
+            @Override public void onLongClick(File f){toggleSelect(f);}
+            @Override public void onMore(File f){fileMenu(f);}
+        }));
+
+        boolean hasItems=!shown.isEmpty();
+        recycler.setVisibility(hasItems?View.VISIBLE:View.GONE);
+        emptyState.setVisibility(hasItems?View.GONE:View.VISIBLE);
+
+        sortChip.setText(sortLabel());
+        viewChip.setText(gridMode?"List":"Grid");
+        viewChip.setChipIconResource(gridMode?R.drawable.ic_list:R.drawable.ic_grid);
+        pasteChip.setVisibility(clipboard.isEmpty()?View.GONE:View.VISIBLE);
+        if(!clipboard.isEmpty())pasteChip.setText("Paste ("+clipboard.size()+")");
+
+        boolean selecting=!selected.isEmpty();
+        mainToolbar.setVisibility(selecting?View.GONE:View.VISIBLE);
+        selectionToolbar.setVisibility(selecting?View.VISIBLE:View.GONE);
+        headerDetails.setVisibility(selecting?View.GONE:View.VISIBLE);
+        selectionToolbar.setTitle(selected.size()+" selected");
+        fab.setVisibility(selecting?View.GONE:View.VISIBLE);
+
+        folderTitle.setText(selecting?selected.size()+" selected":(showingResults?folderTitle.getText():(cwd!=null&&cwd.equals(Environment.getExternalStorageDirectory())?"Internal storage":cwd==null?"Files":cwd.getName())));
     }
-    private String icon(File f){if(FileEngine.isImage(f))return "🖼 ";if(FileEngine.isVideo(f))return "🎬 ";if(FileEngine.isAudio(f))return "🎵 ";if(FileEngine.isApk(f))return "🤖 ";if(FileEngine.isArchive(f))return "🗜 ";return "📄 ";}
     private void toggleSelect(File f){String k=AppPrefs.canon(f);if(!selected.remove(k))selected.add(k);render();}
     private void clearSelection(){selected.clear();render();}
     private List<File> selectedFiles(){ArrayList<File>a=new ArrayList<>();for(File f:shown)if(selected.contains(AppPrefs.canon(f)))a.add(f);return a;}
@@ -309,7 +366,7 @@ public class MainActivity extends Activity {
     private void installApk(File f){if(Build.VERSION.SDK_INT>=26&&!getPackageManager().canRequestPackageInstalls()){try{startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName())));toast("Allow BlazeFM to install unknown apps, then retry the APK.");}catch(Exception e){toast("Enable 'Install unknown apps' for BlazeFM in Android settings.");}return;}Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),"application/vnd.android.package-archive");i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);try{startActivity(i);}catch(Exception e){toast("Installer unavailable: "+e.getMessage());}}
 
     private void storageInfo(){File e=Environment.getExternalStorageDirectory();long total=e.getTotalSpace(),free=e.getFreeSpace();new AlertDialog.Builder(this).setTitle("Storage").setMessage("Total: "+fmt(total)+"\nUsed: "+fmt(total-free)+"\nFree: "+fmt(free)+"\n\nCurrent folder:\n"+cwd.getAbsolutePath()).setPositiveButton("OK",null).show();}
-    private void about(){String m="BlazeFM 1.2.0\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new AlertDialog.Builder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
+    private void about(){String m="BlazeFM 1.3.0\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new AlertDialog.Builder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
 
     private void progress(String s){cancel=false;status.setText(s+" · tap status to cancel");status.setOnClickListener(v->{cancel=true;status.setText("Cancelling…");});}
     private void setProgress(String s){runOnUiThread(()->status.setText(s));}
