@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/blaze_background">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/cloud_browser_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationIcon="@drawable/ic_arrow_back"
+        app:title="Cloud Browser"
+        app:subtitle="Provider files" />
+
+    <TextView
+        android:id="@+id/cloud_browser_path"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp"
+        android:singleLine="true"
+        android:ellipsize="start"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/blaze_on_surface_variant" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:scrollbars="none">
+        <com.google.android.material.chip.ChipGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleLine="true"
+            app:chipSpacingHorizontal="8dp">
+            <com.google.android.material.chip.Chip android:id="@+id/cloud_up" style="@style/Widget.Material3.Chip.Assist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Up" app:chipIcon="@drawable/ic_arrow_up" app:chipIconVisible="true"/>
+            <com.google.android.material.chip.Chip android:id="@+id/cloud_upload" style="@style/Widget.Material3.Chip.Assist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Upload" app:chipIcon="@drawable/ic_upload" app:chipIconVisible="true"/>
+            <com.google.android.material.chip.Chip android:id="@+id/cloud_new_folder" style="@style/Widget.Material3.Chip.Assist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="New folder" app:chipIcon="@drawable/ic_create_folder" app:chipIconVisible="true"/>
+            <com.google.android.material.chip.Chip android:id="@+id/cloud_refresh" style="@style/Widget.Material3.Chip.Assist" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Refresh" app:chipIcon="@drawable/ic_refresh" app:chipIconVisible="true"/>
+        </com.google.android.material.chip.ChipGroup>
+    </HorizontalScrollView>
+
+    <TextView
+        android:id="@+id/cloud_browser_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="4dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/blaze_on_surface_variant" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/cloud_browser_list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingStart="8dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="12dp" />
+</LinearLayout>
