@@ -8,8 +8,8 @@ android {
         applicationId 'com.blazefm.blazesystems'
         minSdk 21
         targetSdk 35
-        versionCode 20
-        versionName '1.2.0'
+        versionCode 30
+        versionName '1.3.0'
     }
 
     compileOptions {
@@ -27,6 +27,8 @@ android {
 }
 
 dependencies {
+    implementation 'com.google.android.material:material:1.13.0'
+    implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'commons-net:commons-net:3.11.1'
     implementation 'eu.agno3.jcifs:jcifs-ng:2.1.9'
     implementation 'org.slf4j:slf4j-nop:1.7.36'

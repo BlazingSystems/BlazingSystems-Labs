@@ -1,9 +1,20 @@
 <resources>
-    <color name="blaze_orange">#FF6B00</color>
+    <color name="blaze_primary">#FF6B00</color>
+    <color name="blaze_on_primary">#FFFFFF</color>
+    <color name="blaze_primary_container">#FFE2CF</color>
+    <color name="blaze_on_primary_container">#351000</color>
+    <color name="blaze_background">#F9F9FC</color>
+    <color name="blaze_surface">#FFFFFF</color>
+    <color name="blaze_surface_variant">#F0F1F5</color>
+    <color name="blaze_on_surface">#1B1B1F</color>
+    <color name="blaze_on_surface_variant">#5F636B</color>
+    <color name="blaze_outline">#C8C9D0</color>
+    <color name="blaze_error">#BA1A1A</color>
+    <color name="blaze_scrim">#66000000</color>
+    <color name="blaze_orange">@color/blaze_primary</color>
     <color name="blaze_orange_dark">#181B22</color>
     <color name="blaze_header">#181B22</color>
-    <color name="blaze_bg">#F6F7F9</color>
-    <color name="blaze_surface">#FFFFFF</color>
-    <color name="blaze_text">#191C21</color>
-    <color name="blaze_muted">#656D7A</color>
+    <color name="blaze_bg">@color/blaze_background</color>
+    <color name="blaze_text">@color/blaze_on_surface</color>
+    <color name="blaze_muted">@color/blaze_on_surface_variant</color>
 </resources>

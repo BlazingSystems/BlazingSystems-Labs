@@ -1,11 +1,19 @@
 <resources>
-    <style name="AppTheme" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/blaze_primary</item>
+        <item name="colorOnPrimary">@color/blaze_on_primary</item>
+        <item name="colorPrimaryContainer">@color/blaze_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/blaze_on_primary_container</item>
+        <item name="colorSurface">@color/blaze_surface</item>
+        <item name="colorOnSurface">@color/blaze_on_surface</item>
+        <item name="colorSurfaceVariant">@color/blaze_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/blaze_on_surface_variant</item>
+        <item name="colorOutline">@color/blaze_outline</item>
+        <item name="colorError">@color/blaze_error</item>
+        <item name="android:windowBackground">@color/blaze_background</item>
+        <item name="android:navigationBarColor">@color/blaze_surface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:fontFamily">sans</item>
-        <item name="android:windowActionModeOverlay">true</item>
-        <item name="android:navigationBarColor">#0E1014</item>
-        <item name="android:statusBarColor">#181B22</item>
-        <item name="android:colorAccent">#FF6B00</item>
-        <item name="android:windowBackground">#F6F7F9</item>
-        <item name="android:windowContentTransitions">false</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Material3.MaterialAlertDialog</item>
     </style>
 </resources>
