@@ -84,7 +84,7 @@ public class SearchActivity extends Activity {
         progress.setVisibility(View.VISIBLE);
         status.setText("Searching…");
         empty.setVisibility(View.GONE);
-        list.setVisibility(View.VISIBLE);
+        list.setVisibility(View.GONE);
 
         new Thread(()->{
             List<File> all=FileEngine.walk(base,AppPrefs.showHidden(this),new FileEngine.Progress(){

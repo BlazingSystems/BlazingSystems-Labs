@@ -12,6 +12,8 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - RecyclerView search results with scoped search context and progress feedback;
 - direct return-to-folder navigation from search results;
 - quick-access Favorites and Recent entry points on the Files home surface;
+- dedicated Material Trash screen with restore, permanent delete and empty-state handling;
+- Analyzer redesigned from a text report into metrics, category usage bars and largest-file rows;
 - preserved the v1.3.1 flattened, borderless Material file-row and secondary-screen visual system.
 
 ### 1.3.1 visual polish
@@ -64,7 +66,7 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - removing a saved SAF provider also releases its persisted URI permission;
 - APK install on Android 8+ routes to the per-app unknown-sources permission when required.
 
-## Implemented in 1.3.0
+## Implemented in 1.3.2
 
 ### Local files
 - directory-first browser with file sizes and type hints;
