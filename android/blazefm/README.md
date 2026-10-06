@@ -2,10 +2,21 @@
 
 **Package:** `com.blazefm.blazesystems`  
 **Minimum Android:** Android 5.0 / API 21  
-**Version:** 1.2.0  
+**Version:** 1.3.0  
 **Goal:** compact ES File Explorer-style file manager for older and low-memory Android devices.
 
 BlazeFM is a native Java file manager designed to stay usable on 512 MB-class devices while covering the practical tools that made classic all-in-one Android file managers useful.
+
+### 1.3.0 native UI architecture
+- replaced the programmatically assembled main browser with native Android XML layouts;
+- Material 3 day/night theme with real light and dark palettes;
+- RecyclerView-based list/grid browser instead of ListView/GridView swapping;
+- MaterialToolbar plus contextual selection toolbar, BottomNavigationView, assist Chips and Extended FAB;
+- real Android vector drawables for file types and navigation/actions instead of emoji or Unicode glyphs;
+- native Material dialogs for permissions, destructive confirmations, results, APK information and errors;
+- storage dashboard and category shortcuts for Images, Video, Audio, Documents and APKs;
+- retained bounded asynchronous thumbnail decoding and the existing low-memory file-operation engine;
+- Android 5.0 / API 21 remains the minimum supported platform.
 
 ### 1.2.0 interface refresh
 - modern charcoal-and-orange visual system with neutral file surfaces;
@@ -34,7 +45,7 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - removing a saved SAF provider also releases its persisted URI permission;
 - APK install on Android 8+ routes to the per-app unknown-sources permission when required.
 
-## Implemented in 1.2.0
+## Implemented in 1.3.0
 
 ### Local files
 - directory-first browser with file sizes and type hints;
@@ -83,7 +94,7 @@ The App Manager also requests full installed-package visibility so it can actual
 
 ## Size and performance choices
 
-- native Java UI; no Material/Compose framework;
+- native Java with XML/RecyclerView and Material Components; no Compose runtime;
 - no ads, analytics or telemetry SDK;
 - streaming copy/ZIP/hash operations with 64 KiB buffers;
 - no forced `largeHeap`;
