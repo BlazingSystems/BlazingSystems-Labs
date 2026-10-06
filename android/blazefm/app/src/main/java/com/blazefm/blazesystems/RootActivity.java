@@ -184,26 +184,7 @@ public class RootActivity extends Activity {
     private interface TextAction{void run(String value);}
 
     private void inputDialog(String title,String hint,String initial,String positive,TextAction action){
-        TextInputLayout layout=new TextInputLayout(this);
-        layout.setHint(hint);
-        TextInputEditText edit=new TextInputEditText(layout.getContext());
-        edit.setSingleLine(true);
-        edit.setText(initial);
-        edit.setSelectAllOnFocus(true);
-        layout.addView(edit,new TextInputLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        LinearLayout wrap=new LinearLayout(this);
-        wrap.setPadding(Ui.dp(this,20),Ui.dp(this,8),Ui.dp(this,20),0);
-        wrap.addView(layout,new LinearLayout.LayoutParams(-1,-2));
-
-        new MaterialAlertDialogBuilder(this)
-                .setTitle(title)
-                .setView(wrap)
-                .setNegativeButton("Cancel",null)
-                .setPositiveButton(positive,(d,w)->{
-                    String value=String.valueOf(edit.getText()).trim();
-                    if(!value.isEmpty())action.run(value);
-                }).show();
+        MaterialPrompts.text(this,title,hint,initial,positive,action::run);
     }
 
     private void back(){
