@@ -154,7 +154,7 @@ public class MainActivity extends Activity {
     }
 
     private void createMenu(){
-        final Dialog d=bottomSheet("Create here","Choose what to add in "+(cwd==null?"this folder":cwd.getName()));LinearLayout body=(LinearLayout)d.findViewById(1002);
+        final Sheet sheet=bottomSheet("Create here","Choose what to add in "+(cwd==null?"this folder":cwd.getName()));final Dialog d=sheet.dialog;LinearLayout body=sheet.body;
         addSheetAction(body,d,"▰","New folder","Create an empty folder",false,v->inputSheet("New folder","Folder name","", "Create",n->{if(!validName(n))return;try{File f=new File(cwd,n);if(!f.mkdir())toast("Folder already exists or could not be created");showDir(cwd);}catch(Exception e){toast("Create failed: "+e.getMessage());}}));
         addSheetAction(body,d,"T","New text file","Create an empty text document",false,v->inputSheet("New text file","File name.txt","", "Create",n->{if(!validName(n))return;try{File f=new File(cwd,n);if(!f.createNewFile())toast("File already exists or could not be created");showDir(cwd);}catch(Exception e){toast("Create failed: "+e.getMessage());}}));
         d.show();
@@ -225,7 +225,7 @@ public class MainActivity extends Activity {
     private void toggleView(){AppPrefs.setGridView(this,!AppPrefs.gridView(this));render();}
 
     private void sortSheet(){
-        final Dialog d=bottomSheet("Sort files","Folders stay first; choose how items are ordered");LinearLayout body=(LinearLayout)d.findViewById(1002);
+        final Sheet sheet=bottomSheet("Sort files","Folders stay first; choose how items are ordered");final Dialog d=sheet.dialog;LinearLayout body=sheet.body;
         String current=AppPrefs.sortMode(this);
         addSortChoice(body,d,"A","Name","A to Z","name",current);
         addSortChoice(body,d,"↺","Date","Newest first","date",current);
@@ -266,14 +266,16 @@ public class MainActivity extends Activity {
 
     private boolean validName(String n){if(n.isEmpty()||n.equals(".")||n.equals("..")||n.contains("/")||n.contains("\\")||n.indexOf('\0')>=0){toast("Invalid file name");return false;}return true;}
 
-    private Dialog bottomSheet(String titleText,String subtitle){
+    private static final class Sheet{final Dialog dialog;final LinearLayout body;Sheet(Dialog d,LinearLayout b){dialog=d;body=b;}}
+
+    private Sheet bottomSheet(String titleText,String subtitle){
         final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);FrameLayout overlay=new FrameLayout(this);overlay.setBackgroundColor(0x99000000);overlay.setOnClickListener(v->d.dismiss());
         LinearLayout sheet=new LinearLayout(this);sheet.setOrientation(LinearLayout.VERTICAL);sheet.setPadding(Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,14),Ui.dp(this,12));sheet.setBackground(Ui.rounded(this,Ui.SURFACE,22,Ui.BORDER,1));sheet.setOnClickListener(v->{});
         LinearLayout head=new LinearLayout(this);head.setOrientation(LinearLayout.HORIZONTAL);head.setGravity(Gravity.CENTER_VERTICAL);LinearLayout labels=new LinearLayout(this);labels.setOrientation(LinearLayout.VERTICAL);
         TextView title=Ui.text(this,titleText,18);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setPadding(0,0,0,0);labels.addView(title);TextView sub=Ui.text(this,subtitle,11);sub.setTextColor(Ui.MUTED);sub.setPadding(0,Ui.dp(this,3),0,0);labels.addView(sub);head.addView(labels,new LinearLayout.LayoutParams(0,-2,1));
         Button close=Ui.button(this,"×");close.setTextSize(20);close.setOnClickListener(v->d.dismiss());head.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,42),Ui.dp(this,42)));sheet.addView(head);
-        LinearLayout body=new LinearLayout(this);body.setId(1002);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,Ui.dp(this,12),0,0);sheet.addView(body);
-        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);return d;
+        LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(0,Ui.dp(this,12),0,0);sheet.addView(body);
+        FrameLayout.LayoutParams lp=new FrameLayout.LayoutParams(-1,-2,Gravity.BOTTOM);lp.setMargins(Ui.dp(this,8),0,Ui.dp(this,8),Ui.dp(this,8));overlay.addView(sheet,lp);d.setContentView(overlay);return new Sheet(d,body);
     }
 
     private void addSheetAction(LinearLayout box,Dialog dialog,String icon,String label,String desc,boolean danger,View.OnClickListener action){
