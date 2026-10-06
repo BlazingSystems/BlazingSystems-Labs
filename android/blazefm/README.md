@@ -2,12 +2,20 @@
 
 **Package:** `com.blazefm.blazesystems`  
 **Minimum Android:** Android 5.0 / API 21  
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Goal:** compact ES File Explorer-style file manager for older and low-memory Android devices.
 
 BlazeFM is a native Java file manager designed to stay usable on 512 MB-class devices while covering the practical tools that made classic all-in-one Android file managers useful.
 
-## Implemented in 1.1.0
+### 1.2.0 interface refresh
+- modern charcoal-and-orange visual system with neutral file surfaces;
+- compact top app bar with Search and overflow actions;
+- rounded two-line file cards with file-type badges and metadata;
+- five-destination bottom navigation for Files, Analyze, Network, Cloud and Apps;
+- emphasized New action plus compact Up/Home/Paste controls;
+- shared rounded buttons and surfaces across the legacy utility screens without adding Compose or a heavy UI framework.
+
+## Implemented in 1.2.0
 
 ### Local files
 - directory-first browser with file sizes and type hints;

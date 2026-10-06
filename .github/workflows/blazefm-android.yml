@@ -2,7 +2,7 @@ name: BlazeFM Android
 
 on:
   push:
-    branches: [ main, blazefm-v1.1.0 ]
+    branches: [ main, blazefm-v1.2.0, blazefm-v1.2.0 ]
     paths:
       - 'android/blazefm/**'
       - '.github/workflows/blazefm-android.yml'
@@ -45,14 +45,14 @@ jobs:
       - name: Prepare APKs and checksums
         run: |
           mkdir -p dist
-          cp android/blazefm/app/build/outputs/apk/debug/app-debug.apk dist/BlazeFM-v1.1.0-preview.apk
-          cp android/blazefm/app/build/outputs/apk/release/app-release-unsigned.apk dist/BlazeFM-v1.1.0-release-unsigned.apk
+          cp android/blazefm/app/build/outputs/apk/debug/app-debug.apk dist/BlazeFM-v1.2.0-preview.apk
+          cp android/blazefm/app/build/outputs/apk/release/app-release-unsigned.apk dist/BlazeFM-v1.2.0-release-unsigned.apk
           (cd dist && sha256sum *.apk > SHA256SUMS.txt)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BlazeFM-v1.1.0-${{ github.run_number }}
+          name: BlazeFM-v1.2.0-${{ github.run_number }}
           path: dist/*
           if-no-files-found: error
 
@@ -61,9 +61,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="blazefm-v1.1.0-preview.${GITHUB_RUN_NUMBER}"
+          TAG="blazefm-v1.2.0-preview.${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" dist/* \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "BlazeFM v1.1.0 Preview ${GITHUB_RUN_NUMBER}" \
+            --title "BlazeFM v1.2.0 Preview ${GITHUB_RUN_NUMBER}" \
             --notes "Installable debug-signed preview plus unsigned/minified release APK. Production signing key is intentionally not stored in this public repository."
