@@ -34,6 +34,10 @@ jobs:
           -dontwarn org.ietf.jgss.**
           -dontwarn org.apache.logging.log4j.**
           EOF
+          echo '--- candidate app/build.gradle ---'
+          cat android/blazefm/app/build.gradle
+          echo '--- candidate Java files ---'
+          find android/blazefm/app/src/main/java -type f -maxdepth 10 -print | sort
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -55,9 +59,17 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Validate BlazeFM candidate
+      - name: Validate BlazeFM candidate and expose lint failures
         working-directory: android/blazefm
-        run: gradle --no-daemon --stacktrace clean :app:assembleDebug :app:assembleRelease :app:lint
+        shell: bash
+        run: |
+          set +e
+          gradle --no-daemon --stacktrace clean :app:assembleDebug :app:assembleRelease :app:lintDebug
+          code=$?
+          echo '--- lint text report ---'
+          report='app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt'
+          if [ -f "$report" ]; then cat "$report"; else echo 'lint report not generated'; fi
+          exit $code
 
       - name: Commit validated source
         shell: bash
