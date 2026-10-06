@@ -15,7 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    private LinearLayout root,selectionBar; private ListView list; private TextView path,status,title,folderTitle;
+    private LinearLayout root,selectionBar,homePanel; private ListView list; private TextView path,status,title,folderTitle,storageText; private ProgressBar storageBar;
     private File cwd; private final ArrayList<File>shown=new ArrayList<>(); private final LinkedHashSet<String>selected=new LinkedHashSet<>();
     private final ArrayList<File>clipboard=new ArrayList<>(); private boolean clipboardMove,cancel,showingResults; private final int REQ=9;
 
@@ -44,6 +44,8 @@ public class MainActivity extends Activity {
 
         status=Ui.text(this,"Ready",11);status.setTextColor(Ui.MUTED);status.setPadding(Ui.dp(this,16),Ui.dp(this,8),Ui.dp(this,16),Ui.dp(this,4));root.addView(status);
 
+        buildHomePanel();
+
         list=new ListView(this);list.setDivider(null);list.setDividerHeight(0);list.setClipToPadding(false);list.setPadding(Ui.dp(this,8),Ui.dp(this,4),Ui.dp(this,8),Ui.dp(this,10));list.setBackgroundColor(Ui.BG);root.addView(list,new LinearLayout.LayoutParams(-1,0,1));
 
         selectionBar=Ui.toolbar(this);selectionBar.setVisibility(View.GONE);String[]ss={"Copy","Move","Zip","Trash","Clear"};for(String s:ss){Button b=Ui.button(this,s);Ui.equalAdd(selectionBar,b);if(s.equals("Copy"))b.setOnClickListener(v->prepareClipboard(false));if(s.equals("Move"))b.setOnClickListener(v->prepareClipboard(true));if(s.equals("Zip"))b.setOnClickListener(v->zipSelection());if(s.equals("Trash"))b.setOnClickListener(v->trashSelection());if(s.equals("Clear"))b.setOnClickListener(v->clearSelection());}root.addView(selectionBar);
@@ -56,9 +58,35 @@ public class MainActivity extends Activity {
         list.setOnItemLongClickListener((p,v,pos,id)->{File f=shown.get(pos);if(!selected.isEmpty())toggleSelect(f);else fileMenu(f);return true;});
     }
 
+    private void buildHomePanel(){
+        homePanel=new LinearLayout(this);homePanel.setOrientation(LinearLayout.VERTICAL);homePanel.setPadding(Ui.dp(this,14),Ui.dp(this,12),Ui.dp(this,14),Ui.dp(this,12));
+        homePanel.setBackground(Ui.rounded(this,Ui.SURFACE,16,Ui.BORDER,1));homePanel.setElevation(Ui.dp(this,1));
+        LinearLayout wrap=new LinearLayout(this);wrap.setPadding(Ui.dp(this,12),Ui.dp(this,5),Ui.dp(this,12),Ui.dp(this,5));wrap.addView(homePanel,new LinearLayout.LayoutParams(-1,-2));root.addView(wrap);
+
+        TextView t=Ui.text(this,"Device storage",14);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setPadding(0,0,0,0);homePanel.addView(t);
+        storageText=Ui.text(this,"",11);storageText.setTextColor(Ui.MUTED);storageText.setPadding(0,Ui.dp(this,3),0,Ui.dp(this,8));homePanel.addView(storageText);
+        storageBar=new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal);storageBar.setMax(1000);if(Build.VERSION.SDK_INT>=21)storageBar.setProgressTintList(android.content.res.ColorStateList.valueOf(Ui.ORANGE));homePanel.addView(storageBar,new LinearLayout.LayoutParams(-1,Ui.dp(this,6)));
+
+        TextView quickLabel=Ui.text(this,"Quick locations",11);quickLabel.setTextColor(Ui.MUTED);quickLabel.setPadding(0,Ui.dp(this,11),0,Ui.dp(this,5));homePanel.addView(quickLabel);
+        HorizontalScrollView scroll=new HorizontalScrollView(this);scroll.setHorizontalScrollBarEnabled(false);LinearLayout shortcuts=new LinearLayout(this);shortcuts.setOrientation(LinearLayout.HORIZONTAL);
+        addShortcut(shortcuts,"Downloads",Environment.DIRECTORY_DOWNLOADS);addShortcut(shortcuts,"DCIM",Environment.DIRECTORY_DCIM);addShortcut(shortcuts,"Pictures",Environment.DIRECTORY_PICTURES);addShortcut(shortcuts,"Movies",Environment.DIRECTORY_MOVIES);addShortcut(shortcuts,"Music",Environment.DIRECTORY_MUSIC);
+        scroll.addView(shortcuts);homePanel.addView(scroll);
+    }
+
+    private void addShortcut(LinearLayout bar,String label,String dirName){
+        Button b=Ui.button(this,label);LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(Ui.dp(this,94),Ui.dp(this,40));lp.setMargins(0,0,Ui.dp(this,7),0);bar.addView(b,lp);
+        b.setOnClickListener(v->{File d=Environment.getExternalStoragePublicDirectory(dirName);if(d!=null&&d.isDirectory())showDir(d);else toast(label+" folder is unavailable");});
+    }
+
+    private void updateHomePanel(){
+        if(homePanel==null||cwd==null)return;File home=Environment.getExternalStorageDirectory();boolean show=cwd.equals(home);homePanel.setVisibility(show?View.VISIBLE:View.GONE);if(!show)return;
+        long total=home.getTotalSpace(),free=home.getFreeSpace(),used=Math.max(0,total-free);int progress=total>0?(int)Math.min(1000,(used*1000L)/total):0;storageBar.setProgress(progress);
+        int pct=total>0?(int)((used*100L)/total):0;storageText.setText(pct+"% used  ·  "+fmt(free)+" free of "+fmt(total));
+    }
+
     private void ensurePermission(){if(Build.VERSION.SDK_INT>=30&&!Environment.isExternalStorageManager()){new AlertDialog.Builder(this).setTitle("File access required").setMessage("BlazeFM is a full file manager. Android 11+ requires All files access for normal filesystem browsing, duplicates, archives and Trash. You can still use Cloud/SAF without it.").setPositiveButton("Open settings",(d,w)->{try{startActivity(new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,Uri.parse("package:"+getPackageName())));}catch(Exception e){startActivity(new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION));}}).setNegativeButton("Later",null).show();}else if(Build.VERSION.SDK_INT>=23&&Build.VERSION.SDK_INT<30&&checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)!=PackageManager.PERMISSION_GRANTED)requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE},REQ);}
 
-    private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());folderTitle.setText(d.equals(Environment.getExternalStorageDirectory())?"Internal storage":d.getName());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList<File>x=new ArrayList<>();for(File f:a)if((hidden||!f.getName().startsWith("."))&&!f.getName().equals(".BlazeFM_Trash"))x.add(f);Collections.sort(x,(u,v)->{if(u.isDirectory()!=v.isDirectory())return u.isDirectory()?-1:1;return u.getName().compareToIgnoreCase(v.getName());});shown.addAll(x);}render();status.setText(shown.size()+" items"+((clipboard.size()>0)?" · clipboard "+clipboard.size():""));}
+    private void showDir(File d){if(d==null||!d.isDirectory())return;showingResults=false;cwd=d;path.setText(d.getAbsolutePath());folderTitle.setText(d.equals(Environment.getExternalStorageDirectory())?"Internal storage":d.getName());selected.clear();File[]a=null;try{a=d.listFiles();}catch(Exception ignored){}shown.clear();boolean hidden=AppPrefs.showHidden(this);if(a!=null){ArrayList<File>x=new ArrayList<>();for(File f:a)if((hidden||!f.getName().startsWith("."))&&!f.getName().equals(".BlazeFM_Trash"))x.add(f);Collections.sort(x,(u,v)->{if(u.isDirectory()!=v.isDirectory())return u.isDirectory()?-1:1;return u.getName().compareToIgnoreCase(v.getName());});shown.addAll(x);}updateHomePanel();render();status.setText(shown.size()+" items"+((clipboard.size()>0)?" · clipboard "+clipboard.size():""));}
     private void render(){list.setAdapter(new FileListAdapter(this,shown,selected));selectionBar.setVisibility(selected.isEmpty()?View.GONE:View.VISIBLE);folderTitle.setText(selected.isEmpty()?(cwd!=null&&cwd.equals(Environment.getExternalStorageDirectory())?"Internal storage":cwd==null?"Files":cwd.getName()):selected.size()+" selected");}
     private String icon(File f){if(FileEngine.isImage(f))return "🖼 ";if(FileEngine.isVideo(f))return "🎬 ";if(FileEngine.isAudio(f))return "🎵 ";if(FileEngine.isApk(f))return "🤖 ";if(FileEngine.isArchive(f))return "🗜 ";return "📄 ";}
     private void toggleSelect(File f){String k=AppPrefs.canon(f);if(!selected.remove(k))selected.add(k);render();}
@@ -103,7 +131,7 @@ public class MainActivity extends Activity {
     private void installApk(File f){Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),"application/vnd.android.package-archive");i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);try{startActivity(i);}catch(Exception e){toast("Installer unavailable. Allow 'Install unknown apps' for BlazeFM if prompted.");}}
 
     private void storageInfo(){File e=Environment.getExternalStorageDirectory();long total=e.getTotalSpace(),free=e.getFreeSpace();new AlertDialog.Builder(this).setTitle("Storage").setMessage("Total: "+fmt(total)+"\nUsed: "+fmt(total-free)+"\nFree: "+fmt(free)+"\n\nCurrent folder:\n"+cwd.getAbsolutePath()).setPositiveButton("OK",null).show();}
-    private void about(){String m="BlazeFM 1.1.0\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new AlertDialog.Builder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
+    private void about(){String m="BlazeFM 1.2.0\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new AlertDialog.Builder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
 
     private void progress(String s){cancel=false;status.setText(s+" · tap status to cancel");status.setOnClickListener(v->{cancel=true;status.setText("Cancelling…");});}
     private void setProgress(String s){runOnUiThread(()->status.setText(s));}
