@@ -13,7 +13,7 @@ BlazeFM is a native Java file manager designed to stay usable on 512 MB-class de
 - rounded two-line file cards with file-type badges and metadata;
 - five-destination bottom navigation for Files, Analyze, Network, Cloud and Apps;
 - emphasized New action plus compact Up/Home/Paste controls;
-- shared rounded buttons and surfaces across the legacy utility screens without adding Compose or a heavy UI framework.
+- shared rounded buttons and surfaces across the legacy utility screens without adding Compose or a heavy UI framework;\n- full-screen card-based Tools & Utilities panel instead of the legacy stock alert list;\n- redesigned image/text/video/audio preview shell with share, external-open and file-detail actions.
 
 ### 1.2.0 reliability hardening
 - Cloud, Remote, Root exports and APK backups use Android's Downloads collection on Android 10+ instead of assuming unrestricted filesystem writes;

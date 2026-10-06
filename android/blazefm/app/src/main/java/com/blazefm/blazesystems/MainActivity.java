@@ -121,7 +121,61 @@ public class MainActivity extends Activity {
     private void scanPhotos(){cancel=false;File base=cwd;progress("Analyzing photos…");new Thread(()->{try{FileEngine.SimilarResult r=FileEngine.similarPhotos(base,AppPrefs.showHidden(this),new P());runOnUiThread(()->photoResults(r));}catch(Exception e){err(e);}}).start();}
     private void photoResults(FileEngine.SimilarResult r){List<FileEngine.SimilarPair>p=r.pairs;StringBuilder b=new StringBuilder();int max=Math.min(p.size(),300);for(int i=0;i<max;i++){FileEngine.SimilarPair x=p.get(i);b.append("distance ").append(x.distance).append("\n").append(x.a.getAbsolutePath()).append("\n↔ ").append(x.b.getAbsolutePath()).append("\n\n");}if(r.totalPairs==0)b.append("No visually similar photo pairs found.");if(p.size()>max)b.append("… ").append(p.size()-max).append(" retained pairs not shown\n");if(r.truncated)b.append("\nLow-memory mode retained the best ").append(p.size()).append(" of ").append(r.totalPairs).append(" matching pairs.");new AlertDialog.Builder(this).setTitle("Similar photos · "+r.totalPairs+" pairs").setMessage(b.toString()).setPositiveButton("Close",null).show();status.setText("Photo scan complete");}
 
-    private void tools(){String hidden=AppPrefs.showHidden(this)?"Hide hidden files":"Show hidden files";String[]o={"Exact duplicate finder","Similar photo finder","Storage analyzer","Favorites","Recent files","Trash / Recycle bin",hidden,"App manager / APK backup","Network: SMB / FTP / SFTP","Cloud / document providers","Root browser","Storage info","Refresh","About"};new AlertDialog.Builder(this).setTitle("BlazeFM Tools").setItems(o,(d,w)->{switch(w){case 0:scanDupes();break;case 1:scanPhotos();break;case 2:Intent a=new Intent(this,AnalyzerActivity.class);a.putExtra("path",cwd.getAbsolutePath());startActivity(a);break;case 3:showPaths("Favorites",AppPrefs.favorites(this));break;case 4:showPaths("Recent files",AppPrefs.recents(this));break;case 5:trashDialog();break;case 6:AppPrefs.setShowHidden(this,!AppPrefs.showHidden(this));showDir(cwd);break;case 7:startActivity(new Intent(this,AppManagerActivity.class));break;case 8:startActivity(new Intent(this,RemoteActivity.class));break;case 9:startActivity(new Intent(this,CloudActivity.class));break;case 10:startActivity(new Intent(this,RootActivity.class));break;case 11:storageInfo();break;case 12:showDir(cwd);break;case 13:about();break;}}).show();}
+    private void tools(){
+        final Dialog d=new Dialog(this,android.R.style.Theme_Material_Light_NoActionBar_Fullscreen);
+        LinearLayout root=new LinearLayout(this);root.setOrientation(LinearLayout.VERTICAL);root.setBackgroundColor(Ui.BG);
+
+        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setGravity(Gravity.CENTER_VERTICAL);top.setPadding(Ui.dp(this,16),Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,12));top.setBackgroundColor(Ui.HEADER);
+        LinearLayout names=new LinearLayout(this);names.setOrientation(LinearLayout.VERTICAL);
+        TextView title=Ui.text(this,"Tools & utilities",20);title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);title.setTextColor(Color.WHITE);title.setPadding(0,0,0,0);names.addView(title);
+        TextView sub=Ui.text(this,"Cleanup, locations, connections and system tools",11);sub.setTextColor(Ui.HEADER_MUTED);sub.setPadding(0,Ui.dp(this,3),0,0);names.addView(sub);
+        top.addView(names,new LinearLayout.LayoutParams(0,-2,1));
+        Button close=Ui.iconButton(this,"×");close.setContentDescription("Close tools");close.setOnClickListener(v->d.dismiss());top.addView(close,new LinearLayout.LayoutParams(Ui.dp(this,48),Ui.dp(this,44)));
+        root.addView(top);
+
+        ScrollView scroll=new ScrollView(this);LinearLayout body=new LinearLayout(this);body.setOrientation(LinearLayout.VERTICAL);body.setPadding(Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,12),Ui.dp(this,18));
+
+        toolGroup(body,"CLEAN UP");
+        addTool(body,d,"D","Exact duplicates","SHA-256 verified duplicate cleanup",v->scanDupes());
+        addTool(body,d,"P","Similar photos","Perceptual photo matching with low-memory limits",v->scanPhotos());
+        addTool(body,d,"A","Storage analyzer","Category totals, empty folders and largest files",v->{Intent a=new Intent(this,AnalyzerActivity.class);a.putExtra("path",cwd.getAbsolutePath());startActivity(a);});
+
+        toolGroup(body,"PLACES");
+        addTool(body,d,"★","Favorites","Open folders and files you pinned",v->showPaths("Favorites",AppPrefs.favorites(this)));
+        addTool(body,d,"↺","Recent files","Jump back to recently opened files",v->showPaths("Recent files",AppPrefs.recents(this)));
+        addTool(body,d,"T","Trash","Restore or permanently purge deleted items",v->trashDialog());
+
+        toolGroup(body,"BROWSER");
+        String hidden=AppPrefs.showHidden(this)?"Hide hidden files":"Show hidden files";
+        addTool(body,d,".","Hidden files",hidden,v->{AppPrefs.setShowHidden(this,!AppPrefs.showHidden(this));showDir(cwd);});
+        addTool(body,d,"↻","Refresh","Reload the current folder",v->showDir(cwd));
+        addTool(body,d,"S","Storage info","Device capacity and current location",v->storageInfo());
+
+        toolGroup(body,"CONNECTIONS & SYSTEM");
+        addTool(body,d,"A","App manager","Launch, inspect, back up or uninstall apps",v->startActivity(new Intent(this,AppManagerActivity.class)));
+        addTool(body,d,"N","Network","SMB, FTP and SFTP connections",v->startActivity(new Intent(this,RemoteActivity.class)));
+        addTool(body,d,"☁","Cloud","Android document and cloud providers",v->startActivity(new Intent(this,CloudActivity.class)));
+        addTool(body,d,"#","Root browser","Open privileged filesystem access when available",v->startActivity(new Intent(this,RootActivity.class)));
+        addTool(body,d,"i","About BlazeFM","Version, platform support and feature summary",v->about());
+
+        scroll.addView(body);root.addView(scroll,new LinearLayout.LayoutParams(-1,0,1));d.setContentView(root);d.show();
+    }
+
+    private void toolGroup(LinearLayout box,String label){
+        TextView t=Ui.text(this,label,10);t.setTextColor(Ui.MUTED);t.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);t.setPadding(Ui.dp(this,4),Ui.dp(this,13),Ui.dp(this,4),Ui.dp(this,6));box.addView(t);
+    }
+
+    private void addTool(LinearLayout box,Dialog dialog,String badge,String name,String desc,View.OnClickListener action){
+        LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setPadding(Ui.dp(this,12),Ui.dp(this,10),Ui.dp(this,10),Ui.dp(this,10));row.setBackground(Ui.rounded(this,Ui.SURFACE,16,Ui.BORDER,1));row.setElevation(Ui.dp(this,1));row.setClickable(true);
+        TextView icon=Ui.text(this,badge,16);icon.setGravity(Gravity.CENTER);icon.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);icon.setTextColor(Ui.ORANGE);icon.setPadding(0,0,0,0);icon.setBackground(Ui.rounded(this,Ui.ACCENT_SOFT,14,Color.TRANSPARENT,0));row.addView(icon,new LinearLayout.LayoutParams(Ui.dp(this,44),Ui.dp(this,44)));
+        LinearLayout text=new LinearLayout(this);text.setOrientation(LinearLayout.VERTICAL);text.setPadding(Ui.dp(this,12),0,Ui.dp(this,8),0);
+        TextView n=Ui.text(this,name,14);n.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);n.setPadding(0,0,0,0);text.addView(n);
+        TextView s=Ui.text(this,desc,11);s.setTextColor(Ui.MUTED);s.setPadding(0,Ui.dp(this,3),0,0);text.addView(s);
+        row.addView(text,new LinearLayout.LayoutParams(0,-2,1));
+        TextView arrow=Ui.text(this,"›",22);arrow.setTextColor(Ui.MUTED);arrow.setGravity(Gravity.CENTER);arrow.setPadding(0,0,0,0);row.addView(arrow,new LinearLayout.LayoutParams(Ui.dp(this,28),Ui.dp(this,44)));
+        row.setOnClickListener(v->{dialog.dismiss();action.onClick(v);});
+        LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);lp.setMargins(0,0,0,Ui.dp(this,7));box.addView(row,lp);
+    }
     private void showPaths(String t,Collection<String>paths){ArrayList<String>a=new ArrayList<>();for(String p:paths)if(new File(p).exists())a.add(p);if(a.isEmpty()){toast("No saved items");return;}new AlertDialog.Builder(this).setTitle(t).setItems(a.toArray(new String[0]),(d,w)->{File f=new File(a.get(w));if(f.isDirectory())showDir(f);else openFile(f);}).setPositiveButton("Close",null).show();}
     private void trashDialog(){List<TrashManager.Item>a=TrashManager.list(this);if(a.isEmpty()){toast("Trash is empty");return;}String[]rows=new String[a.size()];for(int i=0;i<rows.length;i++)rows[i]=a.get(i).stored.getName()+"\nfrom: "+a.get(i).original;new AlertDialog.Builder(this).setTitle("Trash · "+a.size()+" items").setItems(rows,(d,w)->trashItem(a.get(w))).setNeutralButton("Empty Trash",(d,w)->new AlertDialog.Builder(this).setTitle("Empty Trash permanently?").setPositiveButton("Empty",(x,y)->new Thread(()->{TrashManager.empty(this);runOnUiThread(()->toast("Trash emptied"));}).start()).setNegativeButton("Cancel",null).show()).setPositiveButton("Close",null).show();}
     private void trashItem(TrashManager.Item i){String[]o={"Restore","Delete permanently"};new AlertDialog.Builder(this).setTitle(i.stored.getName()).setMessage("Original: "+i.original).setItems(o,(d,w)->{if(w==0)new Thread(()->{try{File r=TrashManager.restore(this,i);runOnUiThread(()->toast("Restored: "+r.getAbsolutePath()));}catch(Exception e){runOnUiThread(()->toast("Restore failed: "+e.getMessage()));}}).start();else new Thread(()->{TrashManager.purge(this,i);runOnUiThread(()->toast("Deleted permanently"));}).start();}).show();}

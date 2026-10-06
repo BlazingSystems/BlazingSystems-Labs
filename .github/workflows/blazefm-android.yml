@@ -95,11 +95,11 @@ jobs:
           cat > "$VERSION_DIR/README.md" <<EOF
           # BlazeFM v1.2.0 Preview ${GITHUB_RUN_NUMBER}
 
-          Built from commit `$GITHUB_SHA`.
+          Built from commit: ${GITHUB_SHA}
 
-          - `BlazeFM-v1.2.0-preview.apk` — installable debug-signed preview.
-          - `BlazeFM-v1.2.0-release-unsigned.apk` — minified unsigned release output; not directly installable until signed.
-          - `SHA256SUMS.txt` — APK checksums.
+          - BlazeFM-v1.2.0-preview.apk — installable debug-signed preview.
+          - BlazeFM-v1.2.0-release-unsigned.apk — minified unsigned release output; not directly installable until signed.
+          - SHA256SUMS.txt — APK checksums.
 
           Production signing material is intentionally not stored in this public repository.
           EOF
