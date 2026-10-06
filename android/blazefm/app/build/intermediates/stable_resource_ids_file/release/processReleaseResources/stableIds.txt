@@ -1,7 +1,0 @@
-com.blazefm.blazesystems:drawable/ic_launcher = 0x7f020000
-com.blazefm.blazesystems:string/app_name = 0x7f030000
-com.blazefm.blazesystems:color/blaze_bg = 0x7f010000
-com.blazefm.blazesystems:color/blaze_text = 0x7f010003
-com.blazefm.blazesystems:color/blaze_orange_dark = 0x7f010002
-com.blazefm.blazesystems:style/AppTheme = 0x7f040000
-com.blazefm.blazesystems:color/blaze_orange = 0x7f010001

@@ -1,8 +1,0 @@
-com.blazefm.blazesystems.app-pngs-0 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/generated/res/pngs/release
-com.blazefm.blazesystems.app-resValues-1 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/generated/res/resValues/release
-com.blazefm.blazesystems.app-packageReleaseResources-2 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/intermediates/incremental/release/packageReleaseResources/merged.dir
-com.blazefm.blazesystems.app-packageReleaseResources-3 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/intermediates/incremental/release/packageReleaseResources/stripped.dir
-com.blazefm.blazesystems.app-merged-not-compiled-resources-4 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/intermediates/merged-not-compiled-resources/release
-com.blazefm.blazesystems.app-release-5 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/build/intermediates/merged_res/release/mergeReleaseResources
-com.blazefm.blazesystems.app-main-6 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/main/res
-com.blazefm.blazesystems.app-release-7 /home/runner/work/BlazingSystems-Labs/BlazingSystems-Labs/android/blazefm/app/src/release/res
