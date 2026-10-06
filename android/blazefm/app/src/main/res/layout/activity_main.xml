@@ -162,7 +162,7 @@
             <ImageView android:layout_width="64dp" android:layout_height="64dp" android:contentDescription="@null" android:src="@drawable/ic_folder" app:tint="@color/blaze_primary"/>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:text="@string/empty_folder" android:textAppearance="?attr/textAppearanceTitleMedium" android:textColor="@color/blaze_on_surface"/>
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:gravity="center" android:text="Create something here or paste files from another folder." android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="@color/blaze_on_surface_variant"/>
-            <com.google.android.material.button.MaterialButton android:id="@+id/empty_create" style="@style/Widget.Material3.Button.Filled" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Create" app:icon="@drawable/ic_add"/>
+            <com.google.android.material.button.MaterialButton android:id="@+id/empty_create" style="@style/Widget.Material3.Button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="18dp" android:text="Create" app:icon="@drawable/ic_add"/>
         </LinearLayout>
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
