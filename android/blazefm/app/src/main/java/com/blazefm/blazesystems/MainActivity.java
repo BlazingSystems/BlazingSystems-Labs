@@ -319,11 +319,44 @@ public class MainActivity extends Activity {
         render();
     }
 
-    private void scanDupes(){cancel=false;File base=cwd;progress("Finding exact duplicates…");new Thread(()->{try{List<FileEngine.DupGroup>g=FileEngine.exactDuplicates(base,AppPrefs.showHidden(this),new P());runOnUiThread(()->duplicateResults(g));}catch(Exception e){err(e);}}).start();}
-    private void duplicateResults(List<FileEngine.DupGroup>g){long reclaim=0;StringBuilder b=new StringBuilder();for(FileEngine.DupGroup x:g){reclaim+=x.size*(x.files.size()-1L);b.append('\n').append(x.files.size()).append(" copies · ").append(fmt(x.size)).append(" each\n");for(File f:x.files)b.append(f.getAbsolutePath()).append('\n');}if(g.isEmpty())b.append("No exact duplicates found.");final long save=reclaim;new MaterialAlertDialogBuilder(this).setTitle("Exact duplicates · reclaimable "+fmt(save)).setMessage(b.toString()).setPositiveButton("Close",null).setNeutralButton(g.isEmpty()?"Close":"Trash extra copies",(d,w)->{if(!g.isEmpty())confirmDuplicateCleanup(g);}).show();status.setText("Duplicate scan complete");}
-    private void confirmDuplicateCleanup(List<FileEngine.DupGroup>g){new MaterialAlertDialogBuilder(this).setTitle("Trash duplicate extras?").setMessage("BlazeFM will keep the first file in each SHA-256-verified group and move the other copies to Trash. Review the paths first.").setPositiveButton("Trash extras",(d,w)->new Thread(()->{int n=0;for(FileEngine.DupGroup x:g)for(int i=1;i<x.files.size();i++)try{TrashManager.moveToTrash(this,x.files.get(i));n++;}catch(Exception ignored){}final int z=n;runOnUiThread(()->{showDir(cwd);toast(z+" duplicate file(s) moved to Trash");});}).start()).setNegativeButton("Cancel",null).show();}
-    private void scanPhotos(){cancel=false;File base=cwd;progress("Analyzing photos…");new Thread(()->{try{FileEngine.SimilarResult r=FileEngine.similarPhotos(base,AppPrefs.showHidden(this),new P());runOnUiThread(()->photoResults(r));}catch(Exception e){err(e);}}).start();}
-    private void photoResults(FileEngine.SimilarResult r){List<FileEngine.SimilarPair>p=r.pairs;StringBuilder b=new StringBuilder();int max=Math.min(p.size(),300);for(int i=0;i<max;i++){FileEngine.SimilarPair x=p.get(i);b.append("distance ").append(x.distance).append("\n").append(x.a.getAbsolutePath()).append("\n↔ ").append(x.b.getAbsolutePath()).append("\n\n");}if(r.totalPairs==0)b.append("No visually similar photo pairs found.");if(p.size()>max)b.append("… ").append(p.size()-max).append(" retained pairs not shown\n");if(r.truncated)b.append("\nLow-memory mode retained the best ").append(p.size()).append(" of ").append(r.totalPairs).append(" matching pairs.");new MaterialAlertDialogBuilder(this).setTitle("Similar photos · "+r.totalPairs+" pairs").setMessage(b.toString()).setPositiveButton("Close",null).show();status.setText("Photo scan complete");}
+    private void scanDupes(){
+        cancel=false;
+        File base=cwd;
+        progress("Finding exact duplicates…");
+        new Thread(()->{
+            try{
+                List<FileEngine.DupGroup> groups=FileEngine.exactDuplicates(base,AppPrefs.showHidden(this),new P());
+                File report=CleanupReportStore.saveDuplicates(this,groups);
+                runOnUiThread(()->{
+                    status.setText("Duplicate scan complete");
+                    openCleanupResults(CleanupResultsActivity.MODE_DUPLICATES,report);
+                });
+            }catch(Exception e){err(e);}
+        }).start();
+    }
+
+    private void scanPhotos(){
+        cancel=false;
+        File base=cwd;
+        progress("Analyzing photos…");
+        new Thread(()->{
+            try{
+                FileEngine.SimilarResult result=FileEngine.similarPhotos(base,AppPrefs.showHidden(this),new P());
+                File report=CleanupReportStore.saveSimilar(this,result);
+                runOnUiThread(()->{
+                    status.setText("Photo scan complete");
+                    openCleanupResults(CleanupResultsActivity.MODE_SIMILAR,report);
+                });
+            }catch(Exception e){err(e);}
+        }).start();
+    }
+
+    private void openCleanupResults(String mode,File report){
+        Intent i=new Intent(this,CleanupResultsActivity.class);
+        i.putExtra(CleanupResultsActivity.EXTRA_MODE,mode);
+        i.putExtra(CleanupResultsActivity.EXTRA_REPORT,report.getAbsolutePath());
+        startActivity(i);
+    }
 
     private void tools(){
         ArrayList<ActionSheet.Item> items=new ArrayList<>();
@@ -435,7 +468,7 @@ public class MainActivity extends Activity {
     private void installApk(File f){if(Build.VERSION.SDK_INT>=26&&!getPackageManager().canRequestPackageInstalls()){try{startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,Uri.parse("package:"+getPackageName())));toast("Allow BlazeFM to install unknown apps, then retry the APK.");}catch(Exception e){toast("Enable 'Install unknown apps' for BlazeFM in Android settings.");}return;}Intent i=new Intent(Intent.ACTION_VIEW);i.setDataAndType(BlazeProvider.uriFor(f),"application/vnd.android.package-archive");i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_ACTIVITY_NEW_TASK);try{startActivity(i);}catch(Exception e){toast("Installer unavailable: "+e.getMessage());}}
 
     private void storageInfo(){File e=Environment.getExternalStorageDirectory();long total=e.getTotalSpace(),free=e.getFreeSpace();new MaterialAlertDialogBuilder(this).setTitle("Storage").setMessage("Total: "+fmt(total)+"\nUsed: "+fmt(total-free)+"\nFree: "+fmt(free)+"\n\nCurrent folder:\n"+cwd.getAbsolutePath()).setPositiveButton("OK",null).show();}
-    private void about(){String m="BlazeFM 1.3.2\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new MaterialAlertDialogBuilder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
+    private void about(){String m="BlazeFM 1.3.3\ncom.blazefm.blazesystems\nAndroid 5.0+ (API 21)\n\nLocal file manager, batch copy/move, ZIP, Trash, hidden files, favorites/recent, exact SHA-256 duplicates, similar photos, analyzer, APK manager/backup, media/text preview, SAF cloud providers, SMB/FTP/SFTP, and optional root browser.\n\nNo ads or analytics.";new MaterialAlertDialogBuilder(this).setTitle("About BlazeFM").setMessage(m).setPositiveButton("OK",null).show();}
 
     private void progress(String s){cancel=false;status.setText(s+" · tap status to cancel");status.setOnClickListener(v->{cancel=true;status.setText("Cancelling…");});}
     private void setProgress(String s){runOnUiThread(()->status.setText(s));}

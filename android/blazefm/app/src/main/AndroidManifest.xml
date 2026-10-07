@@ -24,6 +24,7 @@
 
         <activity android:name=".SearchActivity" android:exported="false" android:windowSoftInputMode="adjustResize"/>
         <activity android:name=".TrashActivity" android:exported="false"/>
+        <activity android:name=".CleanupResultsActivity" android:exported="false"/>
         <activity android:name=".PreviewActivity" android:exported="false"/>
         <activity android:name=".AnalyzerActivity" android:exported="false"/>
         <activity android:name=".AppManagerActivity" android:exported="false"/>
