@@ -102,7 +102,7 @@ public class SearchActivity extends Activity {
                 if(token!=generation)return;
                 if(f.getName().toLowerCase(Locale.US).contains(needle))found.add(f);
             }
-            found.sort((a,b)->{
+            java.util.Collections.sort(found,(a,b)->{
                 if(a.isDirectory()!=b.isDirectory())return a.isDirectory()?-1:1;
                 return a.getName().compareToIgnoreCase(b.getName());
             });
