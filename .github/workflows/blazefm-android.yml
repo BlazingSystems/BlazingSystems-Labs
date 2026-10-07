@@ -2,7 +2,7 @@ name: BlazeFM Android
 
 on:
   push:
-    branches: [ main, blazefm-v1.3.2 ]
+    branches: [ main, blazefm-v1.3.3 ]
     paths:
       - 'android/blazefm/**'
       - '.github/workflows/blazefm-android.yml'
@@ -49,14 +49,14 @@ jobs:
       - name: Prepare APKs and checksums
         run: |
           mkdir -p dist
-          cp android/blazefm/app/build/outputs/apk/debug/app-debug.apk dist/BlazeFM-v1.3.2-preview.apk
-          cp android/blazefm/app/build/outputs/apk/release/app-release-unsigned.apk dist/BlazeFM-v1.3.2-release-unsigned.apk
+          cp android/blazefm/app/build/outputs/apk/debug/app-debug.apk dist/BlazeFM-v1.3.3-preview.apk
+          cp android/blazefm/app/build/outputs/apk/release/app-release-unsigned.apk dist/BlazeFM-v1.3.3-release-unsigned.apk
           (cd dist && sha256sum *.apk > SHA256SUMS.txt)
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: BlazeFM-v1.3.2-${{ github.run_number }}
+          name: BlazeFM-v1.3.3-${{ github.run_number }}
           path: dist/*
           if-no-files-found: error
 
@@ -66,11 +66,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="blazefm-v1.3.2-preview.${GITHUB_RUN_NUMBER}"
+          TAG="blazefm-v1.3.3-preview.${GITHUB_RUN_NUMBER}"
           gh release create "$TAG" dist/* \
             --target "$GITHUB_SHA" \
             --prerelease \
-            --title "BlazeFM v1.3.2 Preview ${GITHUB_RUN_NUMBER}" \
+            --title "BlazeFM v1.3.3 Preview ${GITHUB_RUN_NUMBER}" \
             --notes "Installable debug-signed preview plus unsigned/minified release APK. Production signing key is intentionally not stored in this public repository."
 
       - name: Publish durable APK fallback branch
@@ -79,7 +79,7 @@ jobs:
         run: |
           set -euo pipefail
           ASSET_BRANCH="blazefm-release-assets"
-          VERSION_DIR="v1.3.2-preview.${GITHUB_RUN_NUMBER}"
+          VERSION_DIR="v1.3.3-preview.${GITHUB_RUN_NUMBER}"
           TMP_DIR="$(mktemp -d)"
           cp -a dist/. "$TMP_DIR/"
 
@@ -97,17 +97,17 @@ jobs:
           mkdir -p "$VERSION_DIR"
           cp -a "$TMP_DIR/." "$VERSION_DIR/"
           cat > "$VERSION_DIR/README.md" <<EOF
-          # BlazeFM v1.3.2 Preview ${GITHUB_RUN_NUMBER}
+          # BlazeFM v1.3.3 Preview ${GITHUB_RUN_NUMBER}
 
           Built from commit: ${GITHUB_SHA}
 
-          - BlazeFM-v1.3.2-preview.apk — installable debug-signed preview.
-          - BlazeFM-v1.3.2-release-unsigned.apk — minified unsigned release output; not directly installable until signed.
+          - BlazeFM-v1.3.3-preview.apk — installable debug-signed preview.
+          - BlazeFM-v1.3.3-release-unsigned.apk — minified unsigned release output; not directly installable until signed.
           - SHA256SUMS.txt — APK checksums.
 
           Production signing material is intentionally not stored in this public repository.
           EOF
 
           git add "$VERSION_DIR"
-          git commit -m "Publish BlazeFM v1.3.2 Preview ${GITHUB_RUN_NUMBER}"
+          git commit -m "Publish BlazeFM v1.3.3 Preview ${GITHUB_RUN_NUMBER}"
           git push origin "$ASSET_BRANCH"
