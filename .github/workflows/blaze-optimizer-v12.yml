@@ -1,0 +1,63 @@
+name: Blaze Ultimate Optimizer v1.2 Preview
+on:
+  push:
+    paths:
+      - "BlazeUltimateOptimizer/v1.2-preview/**"
+      - ".github/workflows/blaze-optimizer-v12.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-verify-release:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: BlazeUltimateOptimizer/v1.2-preview
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install icon tooling
+        run: python -m pip install --disable-pip-version-check pillow
+      - name: Compile and verify both architectures
+        run: |
+          $ErrorActionPreference = 'Stop'
+          clang --version
+          lld-link --version
+          python build.py
+          if ($LASTEXITCODE -ne 0) { throw "x64 compilation failed" }
+          python build.py --arm64
+          if ($LASTEXITCODE -ne 0) { throw "ARM64 compilation failed" }
+          python verify.py
+          if ($LASTEXITCODE -ne 0) { throw "Static verification failed" }
+      - name: Package preview, source and SHA-256
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python package.py
+          if ($LASTEXITCODE -ne 0) { throw "Packaging failed" }
+          Get-Content release/SHA256SUMS.txt
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazeUltimateOptimizer-v1.2-preview
+          path: BlazeUltimateOptimizer/v1.2-preview/release/*
+      - name: Publish GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "blaze-ultimate-optimizer-v1.2-preview"
+          gh release view $tag --repo "${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Blaze Ultimate Optimizer v1.2 Preview" --prerelease --notes "Native x64 and experimental ARM64. Better crash clusters with exception code, targeted read-only triage, bounded event parsing and truthful safe-fix verdict. Signed publisher metadata: Loumer Cabaluna Manreal (not Authenticode-signed). Windows runtime tests pending."
+            if ($LASTEXITCODE -ne 0) { throw "Could not create GitHub release" }
+          }
+          gh release upload $tag release/BlazeUltimateOptimizer-x64.exe release/BlazeUltimateOptimizer-arm64.exe release/BlazeUltimateOptimizer-v1.2-preview-complete.zip release/SHA256SUMS.txt --clobber --repo "${{ github.repository }}"
+          if ($LASTEXITCODE -ne 0) { throw "Could not upload release assets" }
