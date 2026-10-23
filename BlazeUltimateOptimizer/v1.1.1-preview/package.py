@@ -15,7 +15,6 @@ names=[
     'verify.py',
     'BlazeUltimateOptimizer.ico',
     'BlazeSystems-LogoV2-source-crop.png',
-    'Blaze Systems Brand Identity Board(1).png',
     'HOTFIX-README.md',
     'SAFETY-CHECKS-v1.1.md',
 ]
