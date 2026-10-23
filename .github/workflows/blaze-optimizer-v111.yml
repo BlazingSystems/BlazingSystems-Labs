@@ -1,0 +1,71 @@
+name: Blaze Ultimate Optimizer v1.1.1 Hotfix
+on:
+  push:
+    paths:
+      - "BlazeUltimateOptimizer/v1.1.1-preview/**"
+      - ".github/workflows/blaze-optimizer-v111.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Download verified v1.1 source bundle from this repository
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $u = 'https://raw.githubusercontent.com/BlazingSystems/BlazingSystems-Labs/main/BlazeUltimateOptimizer/v1.1-preview/BlazeUltimateOptimizer-v1.1-preview-complete.zip'
+          Invoke-WebRequest -Uri $u -OutFile 'original-v11.zip'
+          Expand-Archive -LiteralPath 'original-v11.zip' -DestinationPath 'app' -Force
+          if (!(Test-Path 'app/BlazeUltimateOptimizer.c')) { throw 'Source archive is missing the expected C source' }
+      - name: Apply button-label hotfix
+        shell: pwsh
+        run: |
+          python BlazeUltimateOptimizer/v1.1.1-preview/apply-hotfix.py app
+      - name: Install build dependency
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check Pillow
+      - name: Compile Windows x64 and ARM64 preview apps
+        shell: pwsh
+        run: |
+          clang --version
+          lld-link --version
+          python app/build.py
+          python app/build.py --arm64
+          python app/verify.py
+      - name: Make ZIP and checksums
+        shell: pwsh
+        run: |
+          python BlazeUltimateOptimizer/v1.1.1-preview/package.py app release/BlazeUltimateOptimizer-v1.1.1-preview-complete.zip
+          Copy-Item app/BlazeUltimateOptimizer-x64.exe release/
+          Copy-Item app/BlazeUltimateOptimizer-arm64.exe release/
+          Copy-Item app/HOTFIX-README.md release/
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: BlazeUltimateOptimizer-v1.1.1-preview
+          path: release/*
+      - name: Publish downloadable GitHub pre-release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = 'blaze-ultimate-optimizer-v1.1.1-preview'
+          gh release view $tag --repo "${{ github.repository }}" *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Blaze Ultimate Optimizer v1.1.1 Preview — Button Label Hotfix" --prerelease --notes "Fixes invisible button labels by using Windows native push buttons. Includes x64 + experimental ARM64 EXEs. Loumer Cabaluna Manreal, Blaze Systems Logo V2. Unsigned preview; Windows hardware testing pending."
+            if ($LASTEXITCODE -ne 0) { throw 'Failed to create release' }
+          }
+          gh release upload $tag release/BlazeUltimateOptimizer-x64.exe release/BlazeUltimateOptimizer-arm64.exe release/BlazeUltimateOptimizer-v1.1.1-preview-complete.zip release/HOTFIX-README.md release/SHA256-v1.1.1.txt --clobber --repo "${{ github.repository }}"
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to upload release assets' }
